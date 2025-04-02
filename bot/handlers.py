@@ -3,13 +3,14 @@
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
+import cowsay
 
 HELP_COMMAND = """
 /start - начать работу с ботом
 /help - список команд
 """
 
-START_COMMAND = "Добро пожаловать в бот для ленивых АСВКшников!"
+START_COMMAND = "Здорово бродяга!"
 
 router = Router()
 
@@ -23,4 +24,4 @@ async def help_command(message: Message):
 @router.message(Command("start"))
 async def start_command(message: Message):
     """Answer command start."""
-    await message.answer(text=START_COMMAND)
+    await message.answer(cowsay.cowsay(message=START_COMMAND, cow="dragon"))

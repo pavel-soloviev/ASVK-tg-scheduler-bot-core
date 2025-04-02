@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 aiogram = "*"
 python-dotenv = "*"
+python-cowsay = "*"
 
 [dev-packages]
 pre-commit = "*"
