@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 aiogram = "*"
-dotenv = "*"
+python-dotenv = "*"
 
 [dev-packages]
 pre-commit = "*"
