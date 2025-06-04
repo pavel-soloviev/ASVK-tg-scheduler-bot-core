@@ -4,6 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+supabase = "*"
+pydantic-settings = "*"
+aiogram = "*"
 
 [dev-packages]
 pre-commit = "*"
