@@ -17,6 +17,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 TOKEN = config.bot_token.get_secret_value()
 
@@ -24,6 +25,8 @@ TOKEN = config.bot_token.get_secret_value()
 STORAGE = MemoryStorage()
 dp = Dispatcher(storage=STORAGE)
 BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+# scheduler = AsyncIOScheduler()
+# scheduler.start()
 
 
 async def main() -> None:

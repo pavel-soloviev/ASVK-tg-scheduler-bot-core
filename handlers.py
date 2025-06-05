@@ -4,12 +4,15 @@ import supabase as sb
 from config_reader import config
 
 from aiogram import F, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message, CallbackQuery
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime, timedelta
+import pytz
 
 
 router = Router()
@@ -18,6 +21,7 @@ URL = config.url.get_secret_value()
 KEY = config.key.get_secret_value()
 
 CLIENT = sb.create_client(URL, KEY)
+moscow_tz = pytz.timezone("Europe/Moscow")
 
 
 class Registration(StatesGroup):
@@ -78,3 +82,28 @@ async def process_name(message: Message, state: FSMContext):
 async def wait(callback: CallbackQuery, state: FSMContext):
     """Standart response."""
     await callback.message.answer('Отлично!')
+
+
+@router.message(Command("add_deadline"))
+async def cmd_add_deadline(message: Message, command: CommandObject):
+    """Add deadline."""
+    try:
+        parts = message.text.split(maxsplit=3)
+        if len(parts) < 4:
+            raise ValueError("Недостаточно аргументов")
+        date_str, time_str, *title_parts = parts[1:]
+        title = " ".join(title_parts)
+
+        naive_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        deadline = moscow_tz.localize(naive_dt)
+
+        CLIENT.table("deadlines").insert({
+            "telegram_id": message.from_user.id,
+            "title": title,
+            "deadline_at": deadline.isoformat(),
+            "notified": False
+        }).execute()
+
+        await message.answer(f"✅ Дедлайн «{title}» добавлен на {deadline.strftime('%d.%m.%Y %H:%M')} (МСК)")
+    except Exception as e:
+        await message.answer(f"Ошибка: {e}\nПример команды:\n/add_deadline 2025-06-10 18:30 Сдать проект")
