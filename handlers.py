@@ -100,9 +100,8 @@ async def cmd_deadline(message: Message, command: CommandObject):
 
     kb.row(
         InlineKeyboardButton(text="Создать", callback_data="create"),
-        InlineKeyboardButton(text="Редактировать", callback_data="modify"),
+        InlineKeyboardButton(text="Посмотреть список", callback_data="check_list"),
     )
-    kb.add(InlineKeyboardButton(text="Посмотреть список", callback_data="check_list"))
 
     await message.answer(
         "Здесь можно настроить или узнать текущие дедлайны. Выберите действие:",
