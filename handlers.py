@@ -102,7 +102,7 @@ async def cmd_deadline(message: Message, command: CommandObject):
         InlineKeyboardButton(text="Создать", callback_data="create"),
         InlineKeyboardButton(text="Редактировать", callback_data="modify"),
     )
-    kb.add(InlineKeyboardButton(text="Посмотреть список", callback_data="check"))
+    kb.add(InlineKeyboardButton(text="Посмотреть список", callback_data="check_list"))
 
     await message.answer(
         "Здесь можно настроить или узнать текущие дедлайны. Выберите действие:",
@@ -159,3 +159,31 @@ async def input_title(message: Message, state: FSMContext):
 
     await message.answer(f"✅ Дедлайн «{title}» добавлен на {moscow_dt.strftime('%d.%m.%Y %H:%M')} (МСК)")
     await state.clear()
+
+
+@router.callback_query(F.data == "check_list")
+async def check_deadlines_list(callback: CallbackQuery, state: FSMContext):
+    """Check all deadlines."""
+    user_id = callback.from_user.id
+    now = datetime.now(pytz.UTC)
+    future_deadlines = CLIENT.table("deadlines").select(
+        "*").eq("telegram_id", user_id).gt("deadline_at", now.isoformat()).execute()
+    if not future_deadlines:
+        await callback.message.answer("🎉 У вас пока нет активных дедлайнов!")
+        return
+
+    sorted_deadlines = sorted(
+        future_deadlines.data,
+        key=lambda x: datetime.fromisoformat(x['deadline_at'])
+    )
+
+    text = "📅 <b>Ваши дедлайны:</b>\n\n"
+    for i, deadline in enumerate(sorted_deadlines, 1):
+        print(deadline)
+        deadline_time = datetime.fromisoformat(deadline["deadline_at"]).strftime('%d.%m.%Y в %H:%M')
+        text += (
+            f"{i}. <b>{deadline['title']}</b>\n"
+            f"   └ 🕒 {deadline_time}\n\n"
+        )
+
+    await callback.message.answer(text, parse_mode="HTML")
