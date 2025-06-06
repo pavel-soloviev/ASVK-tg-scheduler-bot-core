@@ -13,6 +13,7 @@ from aiogram.fsm.state import StatesGroup, State
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime, timedelta
 import pytz
+import asyncio
 
 
 router = Router()
@@ -28,6 +29,14 @@ class Registration(StatesGroup):
     """Fields to be complited during registartion."""
 
     name = State()
+
+
+class AddDeadline(StatesGroup):
+    """States for cgreating new deadlines."""
+
+    waiting_for_date = State()
+    waiting_for_time = State()
+    waiting_for_title = State()
 
 
 @router.message(CommandStart())
@@ -84,26 +93,69 @@ async def wait(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer('Отлично!')
 
 
-@router.message(Command("add_deadline"))
-async def cmd_add_deadline(message: Message, command: CommandObject):
-    """Add deadline."""
+@router.message(Command("deadlines"))
+async def cmd_deadline(message: Message, command: CommandObject):
+    """Options to work with deadlines."""
+    kb = InlineKeyboardBuilder()
+
+    kb.row(
+        InlineKeyboardButton(text="Создать", callback_data="create"),
+        InlineKeyboardButton(text="Редактировать", callback_data="modify"),
+    )
+    kb.add(InlineKeyboardButton(text="Посмотреть список", callback_data="check"))
+
+    await message.answer(
+        "Здесь можно настроить или узнать текущие дедлайны. Выберите действие:",
+        reply_markup=kb.as_markup()
+    )
+
+
+@router.callback_query(F.data == "create")
+async def start_add_deadline(callback: CallbackQuery, state: FSMContext):
+    """Create new deadline."""
+    await callback.message.edit_text("Введите дату дедлайна в формате YYYY-MM-DD")
+    await state.set_state(AddDeadline.waiting_for_date)
+
+
+@router.message(AddDeadline.waiting_for_date)
+async def input_date(message: Message, state: FSMContext):
+    """Input deadline date."""
     try:
-        parts = message.text.split(maxsplit=3)
-        if len(parts) < 4:
-            raise ValueError("Недостаточно аргументов")
-        date_str, time_str, *title_parts = parts[1:]
-        title = " ".join(title_parts)
+        date = datetime.strptime(message.text, "%Y-%m-%d").date()
+        await state.update_data(date=date)
+        await message.answer("Теперь введите время дедлайна в формате HH:MM")
+        await state.set_state(AddDeadline.waiting_for_time)
+    except ValueError:
+        await message.answer("⚠ Неверный формат. Введите дату как YYYY-MM-DD")
 
-        naive_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-        deadline = moscow_tz.localize(naive_dt)
 
-        CLIENT.table("deadlines").insert({
-            "telegram_id": message.from_user.id,
-            "title": title,
-            "deadline_at": deadline.isoformat(),
-            "notified": False
-        }).execute()
+@router.message(AddDeadline.waiting_for_time)
+async def input_time(message: Message, state: FSMContext):
+    """Input deadline time."""
+    try:
+        time = datetime.strptime(message.text, "%H:%M").time()
+        await state.update_data(time=time)
+        await message.answer("Теперь введите название дедлайна")
+        await state.set_state(AddDeadline.waiting_for_title)
+    except ValueError:
+        await message.answer("⚠ Неверный формат. Введите время как HH:MM")
 
-        await message.answer(f"✅ Дедлайн «{title}» добавлен на {deadline.strftime('%d.%m.%Y %H:%M')} (МСК)")
-    except Exception as e:
-        await message.answer(f"Ошибка: {e}\nПример команды:\n/add_deadline 2025-06-10 18:30 Сдать проект")
+
+@router.message(AddDeadline.waiting_for_title)
+async def input_title(message: Message, state: FSMContext):
+    """Input deadline title."""
+    user_data = await state.get_data()
+    title = message.text
+
+    naive_dt = datetime.combine(user_data["date"], user_data["time"])
+    moscow_dt = moscow_tz.localize(naive_dt)
+
+    CLIENT.table("deadlines").insert({
+        "telegram_id": message.from_user.id,
+        "title": title,
+        "deadline_at": moscow_dt.isoformat(),
+        "notified": False
+    }).execute()
+
+    await message.answer(f"✅ Дедлайн «{title}» добавлен на {moscow_dt.strftime('%d.%m.%Y %H:%M')} (МСК)")
+    await state.clear()
