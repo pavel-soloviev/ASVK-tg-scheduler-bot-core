@@ -122,12 +122,13 @@ async def action_selected(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer("В базе нет предметов.")
         return await state.clear()
             
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=subj['name'], callback_data=f"{action}_subject_{subj['id']}")] 
-            for subj in subjects])
+    builder = InlineKeyboardBuilder()
+    for subj in subjects:
+        builder.button(text=subj['name'], callback_data=f"subject_{subj['id']}")
+
+    builder.adjust(2)
+    await callback.message.answer("Выберите предмет:", reply_markup=builder.as_markup())
         
-    await callback.message.answer("Выберите предмет:", reply_markup=keyboard)
     await state.set_state(HomeWork.selecting_subject)
     await callback.answer()
 
@@ -136,7 +137,7 @@ async def action_selected(callback: CallbackQuery, state: FSMContext):
 async def subject_selected(callback: CallbackQuery, state: FSMContext):
     """Inserting hw description of a chosen subject"""
 
-    print(f'DATA = {callback.data}')
+    #print(f'DATA = {callback.data}')
     subject_id = int(callback.data.split("_")[-1])
     await state.update_data(subject_id=subject_id)
     
@@ -178,9 +179,8 @@ async def deadline_entered(message: Message, state: FSMContext):
             
         data = await state.get_data()
 
-        print(f'DATA_INSERT = subject_id: {int(data['subject_id'])},task: {str(data['task'])}, deadline: {deadline.isoformat()}, user_id: {str(message.from_user.id)}')
+        #print(f'DATA_INSERT = subject_id: {int(data['subject_id'])},task: {str(data['task'])}, deadline: {deadline.isoformat()}, user_id: {str(message.from_user.id)}')
         
-        # Сохраняем в базу
         CLIENT.table('homework').insert({'subject_id': int(data['subject_id']),'description': str(data['task']),
             'due_date': deadline.isoformat(),
             'is_completed': False,
@@ -229,14 +229,10 @@ async def show_homeworks(callback: CallbackQuery, state: FSMContext):
         if not homeworks:
             await callback.message.answer(f"По предмету {subject_name} нет домашних заданий.")
         else:
-            hw_list = "\n\n".join(
-                f"Описание задания: {hw['description']}\n"
-                f"Дедлайн: {datetime.fromisoformat(hw['due_date']).strftime('%d.%m.%Y')}"
-                for hw in homeworks
-            )
-            await callback.message.answer(
-                f"Домашние задания по предмету {subject_name}:\n\n{hw_list}"
-            )
+            hw_list = "\n\n".join(f"Описание задания: {hw['description']}\n"
+                f"Дедлайн: {datetime.fromisoformat(hw['due_date']).strftime('%d.%m.%Y')}" for hw in homeworks)
+            
+            await callback.message.answer(f"Домашние задания по предмету {subject_name}:\n\n{hw_list}")
             
         await state.set_state(Registration.passed)
         await callback.answer()
