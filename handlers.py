@@ -5,6 +5,7 @@ from config_reader import config
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart
+from aiogram.filters.command import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -24,6 +25,8 @@ class Registration(StatesGroup):
     """Fields to be complited during registartion."""
 
     name = State()
+
+
 
 
 @router.message(CommandStart())
@@ -78,3 +81,21 @@ async def process_name(message: Message, state: FSMContext):
 async def wait(callback: CallbackQuery, state: FSMContext):
     """Standart response."""
     await callback.message.answer('Отлично!')
+
+
+@router.message(Command("hw"))
+async def cmd_random(message: Message):
+    builder = InlineKeyboardBuilder()
+    builder.add(InlineKeyboardButton(
+        text="Посмотреть текущие ДЗ",
+        callback_data="check_current_hw")
+    )
+
+    builder.add(InlineKeyboardButton(
+        text="Добавить ДЗ",
+        callback_data="add_hw")
+    )
+    await message.answer(
+        "Выберите действие, которое хотите выполнить",
+        reply_markup=builder.as_markup()
+    )
