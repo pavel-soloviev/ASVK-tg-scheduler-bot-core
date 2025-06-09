@@ -176,3 +176,11 @@ async def friday(callback: CallbackQuery, state: FSMContext):
     """Schedule for friday."""
     schedule = get_schedule(5, 'пятница')
     await callback.message.answer(schedule)
+
+@router.message(F.text, Command("help"))
+async def get_help(message: Message, state: FSMContext):
+    """Print all commands with instruction"""
+    await message.answer("""
+                         /schedule - просмотр расписания,
+                         /smth else
+                         """)
