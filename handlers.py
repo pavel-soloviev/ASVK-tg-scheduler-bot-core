@@ -4,7 +4,7 @@ import supabase as sb
 from config_reader import config
 
 from aiogram import F, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -83,3 +83,96 @@ async def wait(callback: CallbackQuery, state: FSMContext):
     tg_id, tg_username = str(callback.from_user.id), str(callback.from_user.username)
     CLIENT.table("users").update({"tg_id": tg_id}).eq("tg_username", tg_username).execute()
     await callback.message.answer('Отлично!')
+
+
+@router.message(F.text, Command("schedule"))
+async def set_day(message: Message, state: FSMContext):
+    """Select day to get schedule."""
+    day = InlineKeyboardBuilder()
+    day.add(InlineKeyboardButton(
+        text="Понедельник",
+        callback_data="monday")
+    )
+    day.add(InlineKeyboardButton(
+        text="Вторник",
+        callback_data="tuesday")
+    )
+    day.add(InlineKeyboardButton(
+        text="Среда",
+        callback_data="wednesday")
+    )
+    day.add(InlineKeyboardButton(
+        text="Четверг",
+        callback_data="thursday")
+    )
+    day.add(InlineKeyboardButton(
+        text="Пятница",
+        callback_data="friday")
+    )
+    day.adjust(1)
+    await message.answer("Выбери день недели",
+                         reply_markup=day.as_markup())
+
+
+def get_schedule(day, day_to_print):
+    """Get all information to print schedule."""
+    schedule = CLIENT.table("schedule").select("*").eq("day_of_week", day).execute().data
+    if not schedule:
+        return 'В этот день нет пар.'
+    mes = 'Расписание на {}'.format(day_to_print)
+    schedule = sorted(schedule, key=lambda x: x['pair_number'])
+    for i in schedule:
+        classroom = CLIENT.table('classrooms').select('number').eq("id", i["classroom_id"]).execute().data
+        time = CLIENT.table('time_slots').select('*').eq("pair_number", i["pair_number"]).execute().data
+        if i["teacher_id"]:
+            teacher = CLIENT.table('teachers').select('*').eq("id", i["teacher_id"]).execute().data
+        else:
+            teacher = ''
+        match i['week_type']:
+            case 'even':
+                week_type = ' чётные недели'
+            case 'odd':
+                week_type = ' нечётные недели'
+            case _:
+                week_type = ''
+        mes += f"\n\n{time[0]['start_time'][:-3]} - {time[0]['end_time'][:-3]}" + week_type
+        mes += "\nПредмет: {}".format(i['subject'])
+        mes += "\nКабинет: {}".format(classroom[0]['number'])
+        if teacher:
+            mes += "\nПреподаватель: {}".format(teacher[0]['name'])
+    return mes
+
+
+@router.callback_query(F.data == 'monday')
+async def monday(callback: CallbackQuery, state: FSMContext):
+    """Schedule for monday."""
+    schedule = get_schedule(1, 'понедельник')
+    await callback.message.answer(schedule)
+
+
+@router.callback_query(F.data == 'tuesday')
+async def tuesday(callback: CallbackQuery, state: FSMContext):
+    """Schedule for tuesday."""
+    schedule = get_schedule(2, 'вторник')
+    await callback.message.answer(schedule)
+
+
+@router.callback_query(F.data == 'wednesday')
+async def wednesday(callback: CallbackQuery, state: FSMContext):
+    """Schedule for wednesday."""
+    schedule = get_schedule(3, 'среда')
+    await callback.message.answer(schedule)
+
+
+@router.callback_query(F.data == 'thursday')
+async def thursday(callback: CallbackQuery, state: FSMContext):
+    """Schedule for thursday."""
+    schedule = get_schedule(4, 'четверг')
+    await callback.message.answer(schedule)
+
+
+@router.callback_query(F.data == 'friday')
+async def friday(callback: CallbackQuery, state: FSMContext):
+    """Schedule for friday."""
+    schedule = get_schedule(5, 'пятница')
+    await callback.message.answer(schedule)
