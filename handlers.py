@@ -41,12 +41,13 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
 @router.callback_query(F.data == 'registration')
 async def registration(callback: CallbackQuery, state: FSMContext):
     """Start of registartion."""
-    same_user = CLIENT.table("users").select("*").eq("tg_id", str(callback.from_user.id)).execute().data
+    print(str(callback.from_user.username))
+    same_user = CLIENT.table("users").select("*").eq("tg_username", str(callback.from_user.username)).execute().data
     if same_user:
         check = InlineKeyboardBuilder()
         check.add(InlineKeyboardButton(
             text="Всё верно",
-            callback_data='wait'
+            callback_data='right'
         ))
         check.add(InlineKeyboardButton(
             text='Редактировать',
@@ -62,7 +63,7 @@ async def registration(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'fix')
 async def fix_registration(callback: CallbackQuery, state: FSMContext):
     """Start registration from the beginning."""
-    CLIENT.table("users").delete().eq("tg_id", str(callback.from_user.id)).execute()
+    CLIENT.table("users").delete().eq("tg_username", str(callback.from_user.username)).execute()
     await callback.message.answer('Введите ваше ФИО:')
     await state.set_state(Registration.name)
 
@@ -70,11 +71,15 @@ async def fix_registration(callback: CallbackQuery, state: FSMContext):
 @router.message(F.text, Registration.name)
 async def process_name(message: Message, state: FSMContext):
     """Add user."""
-    CLIENT.table("users").insert({"tg_id": str(message.from_user.id), "name": message.text}).execute()
-    await message.answer("Отлично, дождитесь решения админимтратора.")
+    CLIENT.table("users").insert({"tg_id": str(message.from_user.id),
+                                  "name": message.text,
+                                  "tg_username": message.from_user.username}).execute()
+    await message.answer("Отлично!")
 
 
-@router.callback_query(F.data == 'wait')
+@router.callback_query(F.data == 'right')
 async def wait(callback: CallbackQuery, state: FSMContext):
     """Standart response."""
+    tg_id, tg_username = str(callback.from_user.id), str(callback.from_user.username)
+    CLIENT.table("users").update({"tg_id": tg_id}).eq("tg_username", tg_username).execute()
     await callback.message.answer('Отлично!')
