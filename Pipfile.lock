@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "844914b0b0fcaf0e42697815701a816c09d76982911b7762f801f4273dc3a1e4"
+            "sha256": "7348aefb0862a4a69ba07deaf8f0e0c67d15292de91d1f7294fefae2d99461c9"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -151,6 +151,15 @@
             ],
             "markers": "python_version >= '3.9'",
             "version": "==4.9.0"
+        },
+        "apscheduler": {
+            "hashes": [
+                "sha256:4c622d250b0955a65d5d0eb91c33e6d43fd879834bf541e0a18661ae60460133",
+                "sha256:fc134ca32e50f5eadcc4938e3a4545ab19131435e851abb40b34d63d5141c6da"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==3.11.0"
         },
         "attrs": {
             "hashes": [
@@ -776,6 +785,14 @@
             "markers": "python_version >= '3.9'",
             "version": "==1.1.0"
         },
+        "pytz": {
+            "hashes": [
+                "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3",
+                "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"
+            ],
+            "index": "pypi",
+            "version": "==2025.2"
+        },
         "realtime": {
             "hashes": [
                 "sha256:09ff3b61ac928413a27765640b67362380eaddba84a7037a17972a64b1ac52f7",
@@ -847,6 +864,14 @@
             ],
             "markers": "python_version >= '3.9'",
             "version": "==0.4.1"
+        },
+        "tzlocal": {
+            "hashes": [
+                "sha256:cceffc7edecefea1f595541dbd6e990cb1ea3d19bf01b2809f362a03dd7921fd",
+                "sha256:eb1a66c3ef5847adf7a834f1be0800581b683b5608e74f86ecbcef8ab91bb85d"
+            ],
+            "markers": "python_version >= '3.9'",
+            "version": "==5.3.1"
         },
         "websockets": {
             "hashes": [
