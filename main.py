@@ -47,8 +47,8 @@ async def reminder_worker():
             delta = deadline - now
 
             if timedelta(minutes=0) < delta <= timedelta(minutes=1):
-                text = f"⏰ Напоминание!\n<b>{row['title']}</b>\nДедлайн в \
-                {deadline.astimezone(moscow_tz).strftime('%H:%M %d.%m.%Y')}"
+                text = (f"⏰ Напоминание!\n<b>{row['title']}</b>\nДедлайн в "
+                        f"{deadline.astimezone(moscow_tz).strftime('%H:%M %d.%m.%Y')}")
 
                 try:
                     await BOT.send_message(row["telegram_id"], text)

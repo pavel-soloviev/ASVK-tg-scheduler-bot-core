@@ -88,6 +88,7 @@ async def process_name(message: Message, state: FSMContext):
                                   "name": message.text,
                                   "tg_username": message.from_user.username}).execute()
     await message.answer("Отлично!")
+    await state.clear()
 
 
 @router.callback_query(F.data == 'right')
@@ -132,7 +133,7 @@ def get_schedule(day, day_to_print):
     schedule = CLIENT.table("schedule").select("*").eq("day_of_week", day).execute().data
     if not schedule:
         return 'В этот день нет пар.'
-    mes = 'Расписание на {}'.format(day_to_print)
+    mes = '<b>Расписание на {}</b>'.format(day_to_print)
     schedule = sorted(schedule, key=lambda x: x['pair_number'])
     for i in schedule:
         classroom = CLIENT.table('classrooms').select('number').eq("id", i["classroom_id"]).execute().data
@@ -148,9 +149,9 @@ def get_schedule(day, day_to_print):
                 week_type = ' нечётные недели'
             case _:
                 week_type = ''
-        mes += f"\n\n{time[0]['start_time'][:-3]} - {time[0]['end_time'][:-3]}" + week_type
-        mes += "\nПредмет: {}".format(i['subject'])
-        mes += "\nКабинет: {}".format(classroom[0]['number'])
+        mes += f"\n\n<b>{time[0]['start_time'][:-3]} - {time[0]['end_time'][:-3]}</b>" + week_type
+        mes += "\nПредмет: <b>{}</b>".format(i['subject'])
+        mes += "\nКабинет: <b>{}</b>".format(classroom[0]['number'])
         if teacher:
             mes += "\nПреподаватель: {}".format(teacher[0]['name'])
     return mes
@@ -160,28 +161,28 @@ def get_schedule(day, day_to_print):
 async def monday(callback: CallbackQuery, state: FSMContext):
     """Schedule for monday."""
     schedule = get_schedule(1, 'понедельник')
-    await callback.message.answer(schedule)
+    await callback.message.answer(schedule, parse_mode="HTML")
 
 
 @router.callback_query(F.data == 'tuesday')
 async def tuesday(callback: CallbackQuery, state: FSMContext):
     """Schedule for tuesday."""
     schedule = get_schedule(2, 'вторник')
-    await callback.message.answer(schedule)
+    await callback.message.answer(schedule, parse_mode="HTML")
 
 
 @router.callback_query(F.data == 'wednesday')
 async def wednesday(callback: CallbackQuery, state: FSMContext):
     """Schedule for wednesday."""
     schedule = get_schedule(3, 'среда')
-    await callback.message.answer(schedule)
+    await callback.message.answer(schedule, parse_mode="HTML")
 
 
 @router.callback_query(F.data == 'thursday')
 async def thursday(callback: CallbackQuery, state: FSMContext):
     """Schedule for thursday."""
     schedule = get_schedule(4, 'четверг')
-    await callback.message.answer(schedule)
+    await callback.message.answer(schedule, parse_mode="HTML")
 
 
 @router.callback_query(F.data == 'friday')
@@ -194,10 +195,10 @@ async def friday(callback: CallbackQuery, state: FSMContext):
 @router.message(F.text, Command("help"))
 async def get_help(message: Message, state: FSMContext):
     """Print all commands with instruction."""
-    await message.answer("""
-                         /schedule - просмотр расписания,
-                         /deadline - добавить/просмотреть дедлайны
-                         """)
+    await message.answer(
+        "/schedule - просмотр расписания,\n"
+        "/deadlines - добавить/просмотреть дедлайны"
+    )
 
 
 @router.message(Command("deadlines"))
