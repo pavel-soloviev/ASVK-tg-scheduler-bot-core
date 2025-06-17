@@ -7,6 +7,8 @@ name = "pypi"
 supabase = "*"
 pydantic-settings = "*"
 aiogram = "*"
+apscheduler = "*"
+pytz = "*"
 
 [dev-packages]
 pre-commit = "*"
