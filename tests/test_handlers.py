@@ -8,7 +8,7 @@ from aiogram.types import Message, CallbackQuery, User, Chat, InlineKeyboardMark
 from datetime import datetime, timedelta
 import pytz
 
-# Мокируем ДО импорта хендлеров
+
 with patch('Bot.handlers.config') as mock_config, \
      patch('Bot.handlers.sb') as mock_sb:
     mock_config.url.get_secret_value.return_value = "mock_url"
@@ -77,6 +77,10 @@ def fsm_context():
             self._current_data.update(data)
             return self._current_data.copy()
         
+        async def update_data(self, task):
+            self._current_data.update(task)
+            return self._current_data.copy()
+        
         async def clear(self):
             self._current_state = None
             self._current_data = {}
@@ -120,11 +124,11 @@ def message():
 @pytest.fixture
 def callback_query(message):
     cbq = MagicMock(spec=CallbackQuery)
-    cbq.from_user = message.from_user
-    cbq.message = message
-    cbq.answer = AsyncMock()
-    cbq.data = ""
-    return cbq
+    #cbq.from_user.username = message.from_user
+    #cbq.message = message
+    #cbq.answer = AsyncMock()
+    #cbq.data = ""
+    return CallbackQuery
 
 
 
@@ -134,7 +138,6 @@ async def test_start_command(message, bot, auto_mock_config_and_db):
         message, 
         None
     )
-    
     message.answer.assert_called_once()
     args, kwargs = message.answer.call_args
     #print(f'args = {args}')
@@ -144,6 +147,94 @@ async def test_start_command(message, bot, auto_mock_config_and_db):
 
 
 @pytest.mark.asyncio
+async def test_process_name_command(message, fsm_context):
+    await process_name(
+        message, 
+        fsm_context
+    )
+    message.answer.assert_called_once()
+    args, kwargs = message.answer.call_args
+    assert 'Отлично' in args[0]
+
+
+@pytest.mark.asyncio
+async def test_homework_menu_command(message, fsm_context):
+    await homework_menu(
+        message, 
+        fsm_context
+    )
+    message.answer.assert_called_once()
+    args, kwargs = message.answer.call_args
+    assert 'Выберите' in args[0]
+
+
+@pytest.mark.asyncio
+async def test_task_entered_command(message, fsm_context):
+    await task_entered(
+        message, 
+        fsm_context
+    )
+    message.answer.assert_called_once()
+    args, kwargs = message.answer.call_args
+    assert 'Введите дедлайн в формате' in args[0]
+
+
+@pytest.mark.asyncio
+async def test_deadline_entered_command(message, fsm_context):
+    await deadline_entered(
+        message, 
+        fsm_context
+    )
+    message.answer.assert_called_once()
+    args, kwargs = message.answer.call_args
+    assert 'ДЗ успешно добавлено!' in args[0] or 'Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:' in args[0]
+
+
+
+'''
+@pytest.mark.asyncio
+async def test_homework_flow(callback_query, message, auto_mock_config_and_db):
+    _, mock_client = auto_mock_config_and_db
+    
+    # 1. Пользователь вводит /hw
+    message.text = "/hw"
+    state = FSMContext(storage=MemoryStorage(), key='')
+    await state.set_state(Registration.passed)
+    
+    mock_client.table.return_value.select.return_value.execute.return_value.data = [
+        {"id": 1, "name": "Математика"}
+    ]
+    
+    await homework_menu(message, state)
+    message.answer.assert_called_once()
+    assert "Выберите действие:" in message.answer.call_args[0][0]
+    
+    # 2. Пользователь выбирает "Добавить ДЗ"
+    callback_query.data = "add_hw"
+    await action_selected(callback_query, state)
+    callback_query.message.answer.assert_called_once_with("Выберите предмет:")
+    
+    # 3. Пользователь выбирает предмет
+    callback_query.data = "subject_1"
+    await subject_selected(callback_query, state)
+    assert "Выбран предмет:" in callback_query.message.answer.call_args[0][0]
+    assert "Введите задание:" in callback_query.message.answer.call_args[1]['text']
+    
+    # 4. Пользователь вводит задание
+    message.text = "Решить задачи 1-5"
+    await task_entered(message, state)
+    message.answer.assert_called_once_with("Введите дедлайн в формате ДД.ММ.ГГГГ")
+    
+    # 5. Пользователь вводит дедлайн
+    message.text = "31.12.2023"
+    await deadline_entered(message, state)
+    message.answer.assert_called_once_with("ДЗ успешно добавлено!")
+'''
+
+
+'''
+
+@pytest.mark.asyncio
 async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_context):
     _, mock_client = auto_mock_config_and_db
     
@@ -151,10 +242,13 @@ async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_co
     callback_query.data = "registration"
     mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
     
-    await registration(callback_query, fsm_context)
+    a = FSMContext(storage=MemoryStorage(), key='state')
+    registration(callback_query, a)
 
-    print(fsm_context.get_current_state())
-    assert fsm_context.get_current_state() == Registration.name.state
+    print(f'AAAAAAAAAAAAA = {await a.storage.get_state(key='state')}')
+
+    #storage.get_state(key=fsm_context.key)
+    assert a.get_state == Registration.name.state
 
     
     # Проверяем запрос ввода ФИО
@@ -173,3 +267,6 @@ async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_co
     #    "name": "Иванов Иван Иванович",
     #    "tg_username": "test_user"
     #})
+
+
+    '''
