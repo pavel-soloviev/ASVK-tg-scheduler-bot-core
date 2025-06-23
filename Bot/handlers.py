@@ -9,7 +9,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
-# from aiogram.filters.command import Command
 import supabase as sb
 
 from config_reader import config

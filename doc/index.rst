@@ -26,4 +26,4 @@ TG Sheduler Bot documentation
    :maxdepth: 2
    :caption: Contents:
 
-   API_handlers
+   API

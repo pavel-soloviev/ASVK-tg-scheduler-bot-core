@@ -3,7 +3,7 @@ API
 
 Handlers
 --------
-.. automodule:: handlers
+.. automodule:: Bot.handlers
    :members:
    :private-members:
    :undoc-members:
@@ -11,7 +11,8 @@ Handlers
 Main
 ----------
 
-.. automodule:: main
+.. automodule:: Bot
    :members:
    :private-members:
    :undoc-members:
+   :imported-members:
