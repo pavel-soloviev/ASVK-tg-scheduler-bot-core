@@ -4,6 +4,7 @@ from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, CallbackQuery, User, Chat, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 import pytz
@@ -16,7 +17,7 @@ with patch('Bot.handlers.config') as mock_config, \
     mock_client = AsyncMock()
     mock_sb.create_client.return_value = mock_client
     from Bot.handlers import (
-        command_start_handler,
+        command_start_handler,  
         registration,
         fix_registration,
         process_name,
@@ -53,49 +54,22 @@ def auto_mock_config_and_db():
         yield mock_config, mock_client
 
 @pytest.fixture
-def fsm_context():
-    """Улучшенный мок FSMContext с сохранением состояния"""
-    class MockFSMContext:
-        def __init__(self):
-            self._storage = {}  # Хранилище состояний
-            self._current_state = None
-            self._current_data = {}
-        
-        async def get_state(self):
-            return self._current_state
-        
-        async def set_state(self, state):
-            self._current_state = state
-        
-        async def get_data(self):
-            return self._current_data.copy()
-        
-        async def set_data(self, data: dict):
-            self._current_data = data.copy()
-        
-        async def update_data(self, data: dict):
-            self._current_data.update(data)
-            return self._current_data.copy()
-        
-        async def update_data(self, task):
-            self._current_data.update(task)
-            return self._current_data.copy()
-        
-        async def clear(self):
-            self._current_state = None
-            self._current_data = {}
-        
-        # Синхронные методы для тестирования
-        def get_current_state(self):
-            return self._current_state
-        
-        def get_current_data(self):
-            return self._current_data.copy()
-        
-        def print_state(self):  # Для отладки
-            print(f"State: {self._current_state}, Data: {self._current_data}")
-
-    return MockFSMContext()
+async def fsm_context(bot):
+    """Фикстура с синхронным доступом к состоянию"""
+    storage = MemoryStorage()
+    context = FSMContext(storage=storage, bot=bot, user_id=123, chat_id=123)
+    
+    # Добавляем синхронные методы для тестирования
+    async def get_current_state():
+        return await storage.get_state(key=context.key)
+    
+    async def get_current_data():
+        return await storage.get_data(key=context.key)
+    
+    context.get_current_state = get_current_state
+    context.get_current_data = get_current_data
+    
+    return context
 
 @pytest.fixture
 def storage():
@@ -108,90 +82,116 @@ def bot():
     mock.edit_message_text = AsyncMock()
     return mock
 
-@pytest.fixture
-def message():
+def message(id=1, user_name='Somebody', text='Happy life!'):
     msg = MagicMock(spec=Message)
     msg.from_user = MagicMock(spec=User)
-    msg.from_user.id = 123
-    msg.from_user.username = "test_user"
-    msg.chat = MagicMock(spec=Chat)
-    msg.chat.id = 123
+    msg.from_user.id = id
+    msg.from_user.username=user_name
     msg.answer = AsyncMock()
-    msg.text = ""
+    msg.text = text
     return msg
 
 
-@pytest.fixture
-def callback_query(message):
-    cbq = MagicMock(spec=CallbackQuery)
-    #cbq.from_user.username = message.from_user
-    #cbq.message = message
-    #cbq.answer = AsyncMock()
-    #cbq.data = ""
-    return CallbackQuery
+def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody'):
+    """Мок CallbackQuery с базовой функциональностью"""
+    mock_callback = MagicMock(spec=CallbackQuery)
+    mock_callback.id = id  # ID callback-запроса
+    mock_callback.data = data # Данные кнопки
+    mock_callback.from_user = MagicMock()  # Мокаем пользователя
+    mock_callback.from_user.id = user_id  # Telegram ID пользователя
+    mock_callback.from_user.username = user_name
+    mock_callback.message = MagicMock()
+    mock_callback.message.answer = AsyncMock()
+    
+    return mock_callback
 
 
 
 @pytest.mark.asyncio
-async def test_start_command(message, bot, auto_mock_config_and_db):
-    await command_start_handler(
-        message, 
-        None
-    )
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
-    #print(f'args = {args}')
-    #print(kwargs)
+async def test_start_command():
+
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+
+    await command_start_handler(msg, mock_state)
+
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
     assert 'Привет! Я бот 321 группы' in args[0]
     assert "Регистрация" in str(kwargs['reply_markup'])
 
 
 @pytest.mark.asyncio
-async def test_process_name_command(message, fsm_context):
-    await process_name(
-        message, 
-        fsm_context
-    )
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
+async def test_registration_flow():
+    
+    # 1. Имитируем нажатие кнопки "Регистрация"
+    mock_callback = callback()
+    mock_state = AsyncMock(spec=FSMContext)
+    await registration(mock_callback, mock_state)
+
+    args, kwargs = mock_callback.message.answer.call_args
+    print(f'ARGS = {args}')
+    print(f'KWARGS = {kwargs}')
+
+    assert args[0] == 'Введите ваше ФИО:' or 'Вы уже зарегестрированы со следующими данными.' in args[0]
+    #mock_state.set_state.assert_called_once_with(Registration.name)
+
+@pytest.mark.asyncio
+async def test_process_name_command():
+    
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+
+    await process_name(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
     assert 'Отлично' in args[0]
 
 
 @pytest.mark.asyncio
-async def test_homework_menu_command(message, fsm_context):
+async def test_homework_menu_command():
+    
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+
     await homework_menu(
-        message, 
-        fsm_context
+        msg, 
+        mock_state
     )
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
     assert 'Выберите' in args[0]
 
 
 @pytest.mark.asyncio
-async def test_task_entered_command(message, fsm_context):
-    await task_entered(
-        message, 
-        fsm_context
-    )
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
+async def test_task_entered_command():
+    
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+    
+    await task_entered(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
     assert 'Введите дедлайн в формате' in args[0]
 
 
 @pytest.mark.asyncio
-async def test_deadline_entered_command(message, fsm_context):
-    await deadline_entered(
-        message, 
-        fsm_context
-    )
-    message.answer.assert_called_once()
-    args, kwargs = message.answer.call_args
+async def test_deadline_entered_command():
+
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+
+    await deadline_entered(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
     assert 'ДЗ успешно добавлено!' in args[0] or 'Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:' in args[0]
 
 
 
 '''
+
+
+
 @pytest.mark.asyncio
 async def test_homework_flow(callback_query, message, auto_mock_config_and_db):
     _, mock_client = auto_mock_config_and_db
@@ -229,10 +229,10 @@ async def test_homework_flow(callback_query, message, auto_mock_config_and_db):
     message.text = "31.12.2023"
     await deadline_entered(message, state)
     message.answer.assert_called_once_with("ДЗ успешно добавлено!")
-'''
 
 
-'''
+
+
 
 @pytest.mark.asyncio
 async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_context):
@@ -267,6 +267,4 @@ async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_co
     #    "name": "Иванов Иван Иванович",
     #    "tg_username": "test_user"
     #})
-
-
     '''
