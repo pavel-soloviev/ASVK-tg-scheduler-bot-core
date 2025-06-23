@@ -1,4 +1,4 @@
-"""Main functionality of bot."""
+"""Initialize client run bot."""
 import supabase as sb
 import logging
 import sys
@@ -26,7 +26,7 @@ TOKEN = config.bot_token.get_secret_value()
 
 STORAGE = MemoryStorage()
 dp = Dispatcher(storage=STORAGE)
-BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
 
 URL = config.url.get_secret_value()
 KEY = config.key.get_secret_value()
@@ -47,14 +47,14 @@ async def reminder_worker():
             delta = deadline - now
 
             if timedelta(minutes=0) < delta <= timedelta(minutes=1):
-                text = (f"⏰ Напоминание!\n<b>{row['title']}</b>\nДедлайн в "
+                text = (f"Напоминание!\n<b>{row['title']}</b>\nДедлайн в "
                         f"{deadline.astimezone(moscow_tz).strftime('%H:%M %d.%m.%Y')}")
 
                 try:
                     await BOT.send_message(row["telegram_id"], text)
                     CLIENT.table("deadlines").update({"notified": True}).eq("id", row["id"]).execute()
                 except Exception as e:
-                    print(f"❌ Ошибка отправки уведомления: {e}")
+                    print(f"Ошибка отправки уведомления: {e}")
 
         await asyncio.sleep(60)
 
@@ -66,5 +66,6 @@ async def main() -> None:
     await dp.start_polling(BOT)
 
 if __name__ == "__main__":
+    BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
