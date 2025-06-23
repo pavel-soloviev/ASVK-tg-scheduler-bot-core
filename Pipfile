@@ -9,6 +9,7 @@ pydantic-settings = "*"
 aiogram = "*"
 apscheduler = "*"
 pytz = "*"
+babel = "*"
 
 [dev-packages]
 pre-commit = "*"

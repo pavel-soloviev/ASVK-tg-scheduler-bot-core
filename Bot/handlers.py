@@ -1,6 +1,7 @@
 """Handlers for our bot."""
 import asyncio
 import pytz
+import gettext
 from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.fsm.state import StatesGroup, State
@@ -10,8 +11,10 @@ from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 import supabase as sb
+import locale
 
 from config_reader import config
+from locale_util import with_locale, user_langs, set_locale
 
 from aiogram import F, Router
 
@@ -53,34 +56,65 @@ class AddDeadline(StatesGroup):
 @router.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     """Greeting of the bot."""
+    language = InlineKeyboardBuilder()
+    language.add(InlineKeyboardButton(
+        text="Русский",
+        callback_data='lang_ru'
+    ))
+    language.add(InlineKeyboardButton(
+        text='English',
+        callback_data='lang_en'
+    ))
+    await message.answer("Choose language.",
+                         reply_markup=language.as_markup())
+
+
+@router.callback_query(F.data.startswith('lang_'))
+@with_locale
+async def start_registration(callback: CallbackQuery, state: FSMContext):
+    """Choose language and start registration."""
+    lang_code = callback.data.split("_")[1]
+    if lang_code == 'en':
+        lang = 'en_US.utf8'
+    elif lang_code == 'ru':
+        lang = "ru_RU.utf8"
+    user_langs[callback.from_user.id] = lang
+    set_locale(lang)
+    _ = gettext.gettext
+    await callback.message.answer(_("Отлично, вы выбрали лучший язык в мире!"))
+
     registration = InlineKeyboardBuilder()
     registration.add(InlineKeyboardButton(
         text="Регистрация",
         callback_data="registration")
     )
-    await message.answer("Привет! Я бот 321 группы. Для начала необходимо зарегестрироваться.",
-                         reply_markup=registration.as_markup())
+    await callback.message.answer(
+        _("Привет! Я бот 321 группы. Для начала необходимо зарегестрироваться."),
+        reply_markup=registration.as_markup()
+    )
 
 
 @router.callback_query(F.data == 'registration')
+@with_locale
 async def registration(callback: CallbackQuery, state: FSMContext):
     """Start of registartion."""
+    _ = gettext.gettext
     print(str(callback.from_user.username))
     same_user = CLIENT.table("users").select("*").eq("tg_username", str(callback.from_user.username)).execute().data
     if same_user:
         check = InlineKeyboardBuilder()
         check.add(InlineKeyboardButton(
-            text="Всё верно",
+            text=_("Всё верно"),
             callback_data='right'
         ))
         check.add(InlineKeyboardButton(
-            text='Редактировать',
+            text=_('Редактировать'),
             callback_data='fix'
         ))
         await callback.message.answer(f"Вы уже зарегестрированы со следующими данными.\n\nФИО: {same_user[0]['name']}",
                                       reply_markup=check.as_markup())
         return
-    await callback.message.answer('Введите ваше ФИО:')
+    await callback.message.answer(_('Введите ваше ФИО:'))
     await state.set_state(Registration.name)
 
 
