@@ -6,6 +6,19 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery, User, Chat
 
+# Мокируем ДО импорта хендлеров
+with patch('Bot.handlers.config') as mock_config:
+    mock_config.url.get_secret_value.return_value = "mock_url"
+    mock_config.key.get_secret_value.return_value = "mock_key"
+    from Bot.handlers import command_start_handler
+
+@pytest.fixture(autouse=True)
+def auto_mock_config():
+    with patch('Bot.handlers.config') as mock_config:
+        mock_config.url.get_secret_value.return_value = "mock_url"
+        mock_config.key.get_secret_value.return_value = "mock_key"
+        yield mock_config
+
 @pytest.fixture
 def storage():
     return MemoryStorage()
@@ -13,7 +26,6 @@ def storage():
 @pytest.fixture
 def bot():
     mock = AsyncMock()
-    # Настройка базовых методов бота
     mock.send_message = AsyncMock()
     mock.edit_message_text = AsyncMock()
     return mock
@@ -26,15 +38,19 @@ def message():
     msg.from_user.username = "test_user"
     msg.chat = MagicMock(spec=Chat)
     msg.chat.id = 123
-    msg.answer = AsyncMock()  # Имитируем метод answer
+    msg.answer = AsyncMock()
     return msg
 
-@pytest.fixture
-def callback_query():
-    cbq = MagicMock(spec=CallbackQuery)
-    cbq.from_user = MagicMock(spec=User)
-    cbq.from_user.id = 123
-    cbq.from_user.username = "test_user"
-    cbq.message = message()  # Используем фикстуру message
-    cbq.answer = AsyncMock()
-    return cbq
+@pytest.mark.asyncio
+async def test_start_command(message, bot, auto_mock_config):
+    await command_start_handler(
+        message, 
+        None
+    )
+    
+    message.answer.assert_called_once()
+    args, kwargs = message.answer.call_args
+    #print(f'args = {args}')
+    #print(kwargs)
+    assert 'Привет! Я бот 321 группы' in args[0]
+    assert "Регистрация" in str(kwargs['reply_markup'])

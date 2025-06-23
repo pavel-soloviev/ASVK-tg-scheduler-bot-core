@@ -11,7 +11,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 import supabase as sb
 
-from config_reader import config
+from Bot.config import config
 
 from aiogram import F, Router
 
