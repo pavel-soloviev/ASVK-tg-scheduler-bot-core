@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
-#from aiogram.filters.command import Command
+# from aiogram.filters.command import Command
 import supabase as sb
 
 from config_reader import config
@@ -32,16 +32,15 @@ class Registration(StatesGroup):
     name = State()
     passed = State()
 
+
 class HomeWork(StatesGroup):
-    """Field to be complited during homework creation"""
+    """Field to be complited during homework creation."""
 
-    choosing_action = State() # Пользователь выбирает, что он хочет сделать: посмотреть текущие ДЗ или добавить новые
-    selecting_subject = State() # Пользователь решил добавить новое ДЗ, тогда ему надо выбрать предмет из имеющихся
-    entering_task = State() # Нужно добавить описание нового ДЗ
-    entering_deadline = State() # Нужно ввести дату дедлайна
-    viewing_homeworks = State() # Пользователь хочет посмотреть текущие ДЗ
-
-
+    choosing_action = State()  # Пользователь выбирает, что он хочет сделать: посмотреть текущие ДЗ или добавить новые
+    selecting_subject = State()  # Пользователь решил добавить новое ДЗ, тогда ему надо выбрать предмет из имеющихся
+    entering_task = State()  # Нужно добавить описание нового ДЗ
+    entering_deadline = State()  # Нужно ввести дату дедлайна
+    viewing_homeworks = State()  # Пользователь хочет посмотреть текущие ДЗ
 
 
 class AddDeadline(StatesGroup):
@@ -115,8 +114,7 @@ async def wait(callback: CallbackQuery, state: FSMContext):
 
 @router.message(StateFilter(Registration.passed), Command("hw"))
 async def homework_menu(message: Message, state: FSMContext):
-    """Start of hw command. Chose between add and check homework"""
-
+    """Start of hw command. Chose between add and check homework."""
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Добавить ДЗ", callback_data="add_hw")],
         [InlineKeyboardButton(text="Посмотреть ДЗ", callback_data="view_hw")]
@@ -127,58 +125,54 @@ async def homework_menu(message: Message, state: FSMContext):
 
 @router.callback_query(HomeWork.choosing_action, F.data == "add_hw")
 async def action_selected(callback: CallbackQuery, state: FSMContext):
-    """Adding hw selected. Choose subject to add hw"""
-
-
+    """Adding hw selected. Choose subject to add hw."""
     await callback.answer()
-    action = callback.data
-    
+    # action = callback.data
+
     response = CLIENT.table('subjects').select('id, name').execute()
     subjects = response.data
-        
+
     if not subjects:
         await callback.message.answer("В базе нет предметов.")
         return await state.clear()
-            
+
     builder = InlineKeyboardBuilder()
     for subj in subjects:
         builder.button(text=subj['name'], callback_data=f"subject_{subj['id']}")
 
     builder.adjust(2)
     await callback.message.answer("Выберите предмет:", reply_markup=builder.as_markup())
-        
+
     await state.set_state(HomeWork.selecting_subject)
     await callback.answer()
 
 
 @router.callback_query(HomeWork.selecting_subject)
 async def subject_selected(callback: CallbackQuery, state: FSMContext):
-    """Inserting hw description of a chosen subject"""
-
-    #print(f'DATA = {callback.data}')
+    """Insert hw description of a chosen subject."""
+    # print(f'DATA = {callback.data}')
     subject_id = int(callback.data.split("_")[-1])
     await state.update_data(subject_id=subject_id)
-    
+
     try:
         response = CLIENT.table('subjects').select('name').eq('id', subject_id).execute()
         subject_name = response.data[0]['name'] if response.data else "неизвестный предмет"
-        
+
         await callback.message.answer(f"Выбран предмет: {subject_name}\n")
-        await callback.message.answer(f"Введите задание:")
+        await callback.message.answer("Введите задание:")
         await state.set_state(HomeWork.entering_task)
-        
+
     except Exception as e:
         await callback.message.answer("Ошибка при получении данных о предмете")
         print(f"Error getting subject name: {e}")
         await state.clear()
-    
+
     await callback.answer()
 
 
 @router.message(HomeWork.entering_task)
 async def task_entered(message: Message, state: FSMContext):
-    """Inserting deadline of the hw"""
-
+    """Insert deadline of the hw."""
     await state.update_data(task=message.text)
     await message.answer("Введите дедлайн в формате ДД.ММ.ГГГГ")
     await state.set_state(HomeWork.entering_deadline)
@@ -186,78 +180,81 @@ async def task_entered(message: Message, state: FSMContext):
 
 @router.message(HomeWork.entering_deadline)
 async def deadline_entered(message: Message, state: FSMContext):
-    """Inserting hw into BD"""
-
-
+    """Insert hw into BD."""
     try:
         deadline = datetime.strptime(message.text, "%d.%m.%Y").date()
         if deadline < datetime.now().date():
             await message.answer("Дедлайн не может быть в прошлом! Введите корректную дату:")
             return
-            
+
         data = await state.get_data()
 
-        #print(f'DATA_INSERT = subject_id: {int(data['subject_id'])},task: {str(data['task'])}, deadline: {deadline.isoformat()}, user_id: {str(message.from_user.id)}')
-        
-        CLIENT.table('homework').insert({'subject_id': int(data['subject_id']),'description': str(data['task']),
-            'due_date': deadline.isoformat(),
-            'is_completed': False,
-            'tg_id': str(message.from_user.id)}).execute()
-        
+        # print(f'DATA_INSERT = subject_id: {int(data['subject_id'])},task: \
+        # {str(data['task'])}, deadline: {deadline.isoformat()}, user_id: {str(message.from_user.id)}')
+
+        CLIENT.table('homework').insert({'subject_id': int(data['subject_id']), 'description': str(data['task']),
+                                         'due_date': deadline.isoformat(),
+                                         'is_completed': False,
+                                         'tg_id': str(message.from_user.id)}).execute()
+
         await message.answer("ДЗ успешно добавлено!")
-        await state.set_state(Registration.passed) # После добавления ДЗ возвращаемся в начальное состояние. Пользователь зареган и может давать команды
-        
+        # После добавления ДЗ возвращаемся в начальное состояние. Пользователь зареган и может давать команды
+        await state.set_state(Registration.passed)
+
     except ValueError:
         await message.answer("Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:")
 
 
-
 @router.callback_query(HomeWork.choosing_action, F.data == "view_hw")
 async def view_homeworks_start(callback: CallbackQuery, state: FSMContext):
+    """Choose subject."""
     try:
         response = CLIENT.table('subjects').select('id, name').execute()
         subjects = response.data
-        
+
         if not subjects:
             await callback.message.answer("В базе нет предметов.")
             return await state.clear()
-            
+
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=subj['name'], callback_data=f"view_subject_{subj['id']}")] 
+                [InlineKeyboardButton(text=subj['name'], callback_data=f"view_subject_{subj['id']}")]
                 for subj in subjects])
-        
+
         await callback.message.answer("Выберите предмет для просмотра ДЗ:", reply_markup=keyboard)
         await state.set_state(HomeWork.viewing_homeworks)
         await callback.answer()
-        
+
     except Exception as e:
         await callback.message.answer(f"Ошибка: {e}")
         await state.set_state(Registration.passed)
 
+
 @router.callback_query(HomeWork.viewing_homeworks, F.data.startswith("view_subject_"))
 async def show_homeworks(callback: CallbackQuery, state: FSMContext):
+    """Get hw for particular subject."""
     subject_id = callback.data.split("_")[-1]
-    
+
     try:
         subject_name = CLIENT.table('subjects').select('name').eq('id', subject_id).execute().data[0]['name']
-            
-        homeworks = CLIENT.table('homework').select('description, due_date').eq('subject_id', subject_id).order('due_date').execute().data
-            
+
+        homeworks = CLIENT.table('homework').select('description, due_date').eq(
+            'subject_id', subject_id).order('due_date').execute().data
+
         if not homeworks:
             await callback.message.answer(f"По предмету {subject_name} нет домашних заданий.")
         else:
             hw_list = "\n\n".join(f"Описание задания: {hw['description']}\n"
-                f"Дедлайн: {datetime.fromisoformat(hw['due_date']).strftime('%d.%m.%Y')}" for hw in homeworks)
-            
+                                  f"Дедлайн: {datetime.fromisoformat(hw['due_date']).strftime('%d.%m.%Y')}"
+                                  for hw in homeworks)
+
             await callback.message.answer(f"Домашние задания по предмету {subject_name}:\n\n{hw_list}")
-            
+
         await state.set_state(Registration.passed)
         await callback.answer()
     except Exception as e:
         await callback.message.answer(f"Ошибка: {e}")
         await state.set_state(Registration.passed)
-
 
 
 @router.message(F.text, Command("schedule"))
@@ -358,7 +355,8 @@ async def get_help(message: Message, state: FSMContext):
     """Print all commands with instruction."""
     await message.answer(
         "/schedule - просмотр расписания,\n"
-        "/deadlines - добавить/просмотреть дедлайны"
+        "/deadlines - добавить/просмотреть дедлайны\n"
+        "/hw - домашнее задание"
     )
 
 
@@ -394,7 +392,7 @@ async def input_date(message: Message, state: FSMContext):
         await message.answer("Теперь введите время дедлайна в формате HH:MM")
         await state.set_state(AddDeadline.waiting_for_time)
     except ValueError:
-        await message.answer("⚠ Неверный формат. Введите дату как YYYY-MM-DD")
+        await message.answer("Неверный формат. Введите дату как YYYY-MM-DD")
 
 
 @router.message(AddDeadline.waiting_for_time)
@@ -406,7 +404,7 @@ async def input_time(message: Message, state: FSMContext):
         await message.answer("Теперь введите название дедлайна")
         await state.set_state(AddDeadline.waiting_for_title)
     except ValueError:
-        await message.answer("⚠ Неверный формат. Введите время как HH:MM")
+        await message.answer("Неверный формат. Введите время как HH:MM")
 
 
 @router.message(AddDeadline.waiting_for_title)
@@ -425,7 +423,7 @@ async def input_title(message: Message, state: FSMContext):
         "notified": False
     }).execute()
 
-    await message.answer(f"✅ Дедлайн «{title}» добавлен на {moscow_dt.strftime('%d.%m.%Y %H:%M')} (МСК)")
+    await message.answer(f"Дедлайн «{title}» добавлен на {moscow_dt.strftime('%d.%m.%Y %H:%M')} (МСК)")
     await state.clear()
 
 
@@ -437,7 +435,7 @@ async def check_deadlines_list(callback: CallbackQuery, state: FSMContext):
     future_deadlines = CLIENT.table("deadlines").select(
         "*").eq("telegram_id", user_id).gt("deadline_at", now.isoformat()).execute()
     if not future_deadlines:
-        await callback.message.answer("🎉 У вас пока нет активных дедлайнов!")
+        await callback.message.answer("У вас пока нет активных дедлайнов!")
         return
 
     sorted_deadlines = sorted(
@@ -445,13 +443,13 @@ async def check_deadlines_list(callback: CallbackQuery, state: FSMContext):
         key=lambda x: datetime.fromisoformat(x['deadline_at'])
     )
 
-    text = "📅 <b>Ваши дедлайны:</b>\n\n"
+    text = "<b>Ваши дедлайны:</b>\n\n"
     for i, deadline in enumerate(sorted_deadlines, 1):
         print(deadline)
         deadline_time = datetime.fromisoformat(deadline["deadline_at"]).strftime('%d.%m.%Y в %H:%M')
         text += (
             f"{i}. <b>{deadline['title']}</b>\n"
-            f"   └ 🕒 {deadline_time}\n\n"
+            f"   └ {deadline_time}\n\n"
         )
 
     await callback.message.answer(text, parse_mode="HTML")
