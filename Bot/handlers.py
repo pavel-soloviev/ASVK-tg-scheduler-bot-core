@@ -11,7 +11,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 import supabase as sb
 
-from config_reader import config
+from Bot.config import config
 
 from aiogram import F, Router
 
@@ -81,6 +81,9 @@ async def registration(callback: CallbackQuery, state: FSMContext):
                                       reply_markup=check.as_markup())
         return
     await callback.message.answer('Введите ваше ФИО:')
+
+
+    #print(state)
     await state.set_state(Registration.name)
 
 

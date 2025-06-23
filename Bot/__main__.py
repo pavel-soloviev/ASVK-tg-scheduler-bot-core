@@ -4,8 +4,8 @@ import logging
 import sys
 import asyncio
 
-from config_reader import config
-from handlers import router
+from Bot.config import config
+from Bot.handlers import router
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
