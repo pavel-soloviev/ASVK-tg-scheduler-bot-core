@@ -81,6 +81,9 @@ async def registration(callback: CallbackQuery, state: FSMContext):
                                       reply_markup=check.as_markup())
         return
     await callback.message.answer('Введите ваше ФИО:')
+
+
+    #print(state)
     await state.set_state(Registration.name)
 
 
