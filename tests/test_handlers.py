@@ -1,3 +1,5 @@
+"""Tests for handlers."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from aiogram import F
@@ -13,13 +15,13 @@ import string
 
 
 with patch('Bot.handlers.config') as mock_config, \
-     patch('Bot.handlers.sb') as mock_sb:
+        patch('Bot.handlers.sb') as mock_sb:
     mock_config.url.get_secret_value.return_value = "mock_url"
     mock_config.key.get_secret_value.return_value = "mock_key"
     mock_client = AsyncMock()
     mock_sb.create_client.return_value = mock_client
     from Bot.handlers import (
-        command_start_handler,  
+        command_start_handler,
         registration,
         fix_registration,
         process_name,
@@ -45,37 +47,41 @@ with patch('Bot.handlers.config') as mock_config, \
         AddDeadline
     )
 
+
 @pytest.fixture(autouse=True)
 def auto_mock_config_and_db():
     with patch('Bot.handlers.config') as mock_config, \
-         patch('Bot.handlers.sb') as mock_sb:
+            patch('Bot.handlers.sb') as mock_sb:
         mock_config.url.get_secret_value.return_value = "mock_url"
         mock_config.key.get_secret_value.return_value = "mock_key"
         mock_client = AsyncMock()
         mock_sb.create_client.return_value = mock_client
         yield mock_config, mock_client
 
+
 @pytest.fixture
 async def fsm_context(bot):
     """Фикстура с синхронным доступом к состоянию"""
     storage = MemoryStorage()
     context = FSMContext(storage=storage, bot=bot, user_id=123, chat_id=123)
-    
+
     # Добавляем синхронные методы для тестирования
     async def get_current_state():
         return await storage.get_state(key=context.key)
-    
+
     async def get_current_data():
         return await storage.get_data(key=context.key)
-    
+
     context.get_current_state = get_current_state
     context.get_current_data = get_current_data
-    
+
     return context
+
 
 @pytest.fixture
 def storage():
     return MemoryStorage()
+
 
 @pytest.fixture
 def bot():
@@ -84,11 +90,12 @@ def bot():
     mock.edit_message_text = AsyncMock()
     return mock
 
+
 def message(id=1, user_name='Somebody', text='Mario', msg='Some text'):
     msg = MagicMock(spec=Message)
     msg.from_user = MagicMock(spec=User)
     msg.from_user.id = id
-    msg.from_user.username=user_name
+    msg.from_user.username = user_name
     msg.answer = AsyncMock()
     msg.text = text
     msg.message = msg
@@ -99,7 +106,7 @@ def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody', te
     """Мок CallbackQuery с базовой функциональностью"""
     mock_callback = MagicMock(spec=CallbackQuery)
     mock_callback.id = id  # ID callback-запроса
-    mock_callback.data = data # Данные кнопки
+    mock_callback.data = data  # Данные кнопки
     mock_callback.from_user = MagicMock()  # Мокаем пользователя
     mock_callback.from_user.id = user_id  # Telegram ID пользователя
     mock_callback.from_user.username = user_name
@@ -107,9 +114,8 @@ def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody', te
     mock_callback.message.answer = AsyncMock()
     mock_callback.message.edit_text = AsyncMock()
     mock_callback.answer = AsyncMock()
-    
-    return mock_callback
 
+    return mock_callback
 
 
 @pytest.mark.asyncio
@@ -161,7 +167,6 @@ async def test_fix_registration_command():
     mock_callback.message.answer.assert_called_once_with('Введите ваше ФИО:')
 
 
-
 @pytest.mark.asyncio
 async def test_process_name_command():
     """Ожидаемый результат работы функции - пользователь добавлен в БД и выведена соответствующая команда"""
@@ -176,7 +181,7 @@ async def test_process_name_command():
 
 @pytest.mark.asyncio
 async def test_wait_command():
-    
+
     mock_callback = callback()
     mock_state = AsyncMock(spec=FSMContext)
     await wait(mock_callback, mock_state)
@@ -188,7 +193,6 @@ async def test_wait_command():
 async def test_homework_menu_command():
     """Проверка меню выбора ДЗ
     Ожидается сообщение от бота с предложением нажать на кнопки с определенным текстом"""
-
 
     msg = message()
     mock_state = AsyncMock(spec=FSMContext)
@@ -205,7 +209,6 @@ async def test_action_selected_command():
     """Проверка функции выбора действия
     Ожидаемый результат - появилась кнопка с предметами, изменилось состояние машины"""
 
-
     mock_callback = callback()
     mock_state = AsyncMock(spec=FSMContext)
     await action_selected(mock_callback, mock_state)
@@ -217,10 +220,10 @@ async def test_action_selected_command():
 
 @pytest.mark.asyncio
 async def test_task_entered_command():
-    
+
     msg = message()
     mock_state = AsyncMock(spec=FSMContext)
-    
+
     await task_entered(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
@@ -233,7 +236,6 @@ async def test_deadline_entered_command_1():
     """Положительный тест-кейс ввода данных от пользователя о дедлайне домашнего задания
     Ожидаемый результат - успешное добавление ДЗ и изменение состояния машины на зарегистрированного пользователя"""
 
-
     msg = message(text='12.12.2025')
     mock_state = AsyncMock(spec=FSMContext)
 
@@ -242,6 +244,7 @@ async def test_deadline_entered_command_1():
     args, kwargs = msg.answer.call_args
     assert 'ДЗ успешно добавлено!' == args[0]
     mock_state.set_state.assert_called_once_with(Registration.passed)
+
 
 @pytest.mark.asyncio
 async def test_deadline_entered_command_2():
@@ -271,12 +274,10 @@ async def test_deadline_entered_command_3():
     assert 'Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:' == args[0]
 
 
-
 @pytest.mark.asyncio
 async def test_set_day_command():
     """Проверка команды расписания
     Ожидается сообщение с выбором конкретных кнопок с определенным текстом"""
-
 
     msg = message()
     mock_state = AsyncMock(spec=FSMContext)
@@ -289,7 +290,6 @@ async def test_set_day_command():
     assert 'Среда' == kwargs['reply_markup'].inline_keyboard[2][0].text
     assert 'Четверг' == kwargs['reply_markup'].inline_keyboard[3][0].text
     assert 'Пятница' == kwargs['reply_markup'].inline_keyboard[4][0].text
-    
 
 
 @pytest.mark.asyncio
@@ -310,7 +310,6 @@ async def test_cmd_deadline_command():
     """Проверка команды дедлайнов
     Ожидается сообщение с информационным выводом и текстом на кнопках"""
 
-
     msg = message()
     await cmd_deadline(msg, None)
     msg.answer.assert_called_once()
@@ -320,12 +319,10 @@ async def test_cmd_deadline_command():
     assert 'Посмотреть список' == kwargs['reply_markup'].inline_keyboard[0][1].text
 
 
-
 @pytest.mark.asyncio
 async def test_start_add_deadline_command():
     """Проверка функции создания нового дедлайна
     Ожидаемый результат - вывод сообщения с предложением ввести дату"""
-
 
     mock_callback = callback()
     mock_state = AsyncMock(spec=FSMContext)
@@ -334,11 +331,11 @@ async def test_start_add_deadline_command():
     assert 'Введите дату дедлайна в формате YYYY-MM-DD' == args[0]
     mock_state.set_state.assert_called_once_with(AddDeadline.waiting_for_date)
 
+
 @pytest.mark.asyncio
 async def test_input_time_command():
     """Проверка команды дедлайнов с неверным форматом времени
     Ожидается сообщение с информационным выводом и текстом на кнопках"""
-
 
     msg = message(text='No time for this')
     mock_state = AsyncMock(spec=FSMContext)
@@ -346,5 +343,3 @@ async def test_input_time_command():
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
     assert 'Неверный формат. Введите время как HH:MM' == args[0]
-    
-
