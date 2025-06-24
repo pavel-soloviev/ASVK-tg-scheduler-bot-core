@@ -51,7 +51,7 @@ def task_test():
 def task_erase():
     """Clean represitory"""
     return {
-            'actions': ['git clean -xdf'],
+            'actions': ['git clean -df'],
     }
 
 

@@ -67,10 +67,11 @@ async def main() -> None:
 
 
 def start_bot() -> None:
+    global BOT
+    BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
 
 
 if __name__ == "__main__":
-    BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     start_bot()
