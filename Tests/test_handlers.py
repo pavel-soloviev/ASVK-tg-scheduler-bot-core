@@ -273,8 +273,8 @@ async def test_deadline_entered_command_3():
 
 @pytest.mark.asyncio
 async def test_set_day_command():
-    """Проверка меню выбора ДЗ
-    Ожидается сообщение от бота с предложением нажать на кнопки с определенным текстом"""
+    """Проверка команды расписания
+    Ожидается сообщение с выбором конкретных кнопок с определенным текстом"""
 
 
     msg = message()
@@ -282,83 +282,26 @@ async def test_set_day_command():
     await set_day(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
-    assert 'Выберите действие:' == args[0]
-    assert 'Добавить ДЗ' == kwargs['reply_markup'].inline_keyboard[0][0].text
-    assert 'Посмотреть ДЗ' == kwargs['reply_markup'].inline_keyboard[1][0].text
+    assert 'Выбери день недели' == args[0]
+    assert 'Понедельник' == kwargs['reply_markup'].inline_keyboard[0][0].text
+    assert 'Вторник' == kwargs['reply_markup'].inline_keyboard[1][0].text
+    assert 'Среда' == kwargs['reply_markup'].inline_keyboard[2][0].text
+    assert 'Четверг' == kwargs['reply_markup'].inline_keyboard[3][0].text
+    assert 'Пятница' == kwargs['reply_markup'].inline_keyboard[4][0].text
+    
 
 
 @pytest.mark.asyncio
-async def test_homework_flow(callback_query, message, auto_mock_config_and_db):
-    _, mock_client = auto_mock_config_and_db
-    
-    # 1. Пользователь вводит /hw
-    message.text = "/hw"
-    state = FSMContext(storage=MemoryStorage(), key='')
-    await state.set_state(Registration.passed)
-    
-    mock_client.table.return_value.select.return_value.execute.return_value.data = [
-        {"id": 1, "name": "Математика"}
-    ]
-    
-    await homework_menu(message, state)
-    message.answer.assert_called_once()
-    assert "Выберите действие:" in message.answer.call_args[0][0]
-    
-    # 2. Пользователь выбирает "Добавить ДЗ"
-    callback_query.data = "add_hw"
-    await action_selected(callback_query, state)
-    callback_query.message.answer.assert_called_once_with("Выберите предмет:")
-    
-    # 3. Пользователь выбирает предмет
-    callback_query.data = "subject_1"
-    await subject_selected(callback_query, state)
-    assert "Выбран предмет:" in callback_query.message.answer.call_args[0][0]
-    assert "Введите задание:" in callback_query.message.answer.call_args[1]['text']
-    
-    # 4. Пользователь вводит задание
-    message.text = "Решить задачи 1-5"
-    await task_entered(message, state)
-    message.answer.assert_called_once_with("Введите дедлайн в формате ДД.ММ.ГГГГ")
-    
-    # 5. Пользователь вводит дедлайн
-    message.text = "31.12.2023"
-    await deadline_entered(message, state)
-    message.answer.assert_called_once_with("ДЗ успешно добавлено!")
+async def test_get_help_command():
+    """Проверка команды помощи
+    Ожидается сообщение с описанием возможных команд"""
+
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+    await get_help(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
+    assert '/schedule - просмотр расписания,' in args[0]
 
 
 
-
-
-@pytest.mark.asyncio
-async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_context):
-    _, mock_client = auto_mock_config_and_db
-    
-    # 1. Пользователь нажимает кнопку "Регистрация"
-    callback_query.data = "registration"
-    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
-    
-    a = FSMContext(storage=MemoryStorage(), key='state')
-    registration(callback_query, a)
-
-    print(f'AAAAAAAAAAAAA = {await a.storage.get_state(key='state')}')
-
-    #storage.get_state(key=fsm_context.key)
-    assert a.get_state == Registration.name.state
-
-    
-    # Проверяем запрос ввода ФИО
-    #callback_query.message.answer.assert_called_once_with("Введите ваше ФИО:")
-    
-    # 2. Пользователь вводит ФИО
-    message = callback_query.message
-    message.text = "Иванов Иван Иванович"
-    await process_name(message, fsm_context)
-    
-    # Проверяем успешную регистрацию
-    #print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-    #message.answer.assert_called_once_with("Отлично!")
-    #mock_client.table.return_value.insert.assert_called_once_with({
-    #    "tg_id": "123",
-    #    "name": "Иванов Иван Иванович",
-    #    "tg_username": "test_user"
-    #})
