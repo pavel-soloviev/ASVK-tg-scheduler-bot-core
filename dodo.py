@@ -52,7 +52,8 @@ def task_test():
     """Run tests."""
     return {
         'task_dep': ['il8n', "style"],
-        "actions": ["LANG=ru_RU.UTF-8 LC_ALL=ru_RU.UTF-8 pytest ./tests/test_handlers.py"],
+        "actions": ["LANG=ru_RU.UTF-8 LC_ALL=ru_RU.UTF-8 pytest -v ./tests/test_handlers.py"],
+        "verbosity": 2,
     }
 
 
@@ -74,6 +75,6 @@ def task_sdist():
 def task_wheel():
     """Make wheel."""
     return {
-        'task_dep': ['html'],
+        'task_dep': ['html', 'il8n'],
         'actions': ['python3 -m build -w']
     }

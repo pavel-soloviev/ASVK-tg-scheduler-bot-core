@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-24 08:27+0300\n"
+"POT-Creation-Date: 2025-06-24 13:51+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: __main__.py:50
+#: Bot/__main__.py:50
 #, python-brace-format
 msgid ""
 "Напоминание!\n"
@@ -25,27 +25,27 @@ msgid ""
 "Дедлайн в "
 msgstr ""
 
-#: handlers.py:107
+#: Bot/handlers.py:107
 msgid "Отлично, вы выбрали лучший язык в мире!"
 msgstr ""
 
-#: handlers.py:111
+#: Bot/handlers.py:111
 msgid "Регистрация"
 msgstr ""
 
-#: handlers.py:115
+#: Bot/handlers.py:115
 msgid "Привет! Я бот 321 группы. Для начала необходимо зарегестрироваться."
 msgstr ""
 
-#: handlers.py:128
+#: Bot/handlers.py:129
 msgid "Всё верно"
 msgstr ""
 
-#: handlers.py:132
+#: Bot/handlers.py:133
 msgid "Редактировать"
 msgstr ""
 
-#: handlers.py:136
+#: Bot/handlers.py:137
 #, python-brace-format
 msgid ""
 "Вы уже зарегестрированы со следующими данными.\n"
@@ -53,79 +53,79 @@ msgid ""
 "ФИО: {name}"
 msgstr ""
 
-#: handlers.py:139 handlers.py:149
+#: Bot/handlers.py:140 Bot/handlers.py:150
 msgid "Введите ваше ФИО:"
 msgstr ""
 
-#: handlers.py:159 handlers.py:168
+#: Bot/handlers.py:160 Bot/handlers.py:169
 msgid "Отлично!"
 msgstr ""
 
-#: handlers.py:176
+#: Bot/handlers.py:177
 msgid "Добавить ДЗ"
 msgstr ""
 
-#: handlers.py:177
+#: Bot/handlers.py:178
 msgid "Посмотреть ДЗ"
 msgstr ""
 
-#: handlers.py:179
+#: Bot/handlers.py:180
 msgid "Выберите действие:"
 msgstr ""
 
-#: handlers.py:193 handlers.py:273
+#: Bot/handlers.py:194 Bot/handlers.py:274
 msgid "В базе нет предметов."
 msgstr ""
 
-#: handlers.py:201
+#: Bot/handlers.py:202
 msgid "Выберите предмет:"
 msgstr ""
 
-#: handlers.py:218
+#: Bot/handlers.py:219
 #, python-brace-format
 msgid "Выбран предмет: {subject_name}\n"
 msgstr ""
 
-#: handlers.py:219
+#: Bot/handlers.py:220
 msgid "Введите задание:"
 msgstr ""
 
-#: handlers.py:234
+#: Bot/handlers.py:235
 msgid "Введите дедлайн в формате ДД.ММ.ГГГГ"
 msgstr ""
 
-#: handlers.py:244
+#: Bot/handlers.py:245
 msgid "Дедлайн не может быть в прошлом! Введите корректную дату:"
 msgstr ""
 
-#: handlers.py:257
+#: Bot/handlers.py:258
 msgid "ДЗ успешно добавлено!"
 msgstr ""
 
-#: handlers.py:262
+#: Bot/handlers.py:263
 msgid "Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:"
 msgstr ""
 
-#: handlers.py:281
+#: Bot/handlers.py:282
 msgid "Выберите предмет для просмотра ДЗ:"
 msgstr ""
 
-#: handlers.py:302
+#: Bot/handlers.py:303
 #, python-brace-format
 msgid "По предмету {subject_name} нет домашних заданий."
 msgstr ""
 
-#: handlers.py:306
+#: Bot/handlers.py:307
 #, python-brace-format
 msgid "Описание задания: {hw_des}\n"
 msgstr ""
 
-#: handlers.py:307
+#: Bot/handlers.py:308
 #, python-brace-format
 msgid "Дедлайн: {deadtime}"
 msgstr ""
 
-#: handlers.py:310
+#: Bot/handlers.py:311
 #, python-brace-format
 msgid ""
 "Домашние задания по предмету {subject_name}:\n"
@@ -133,88 +133,88 @@ msgid ""
 "{hw_list}"
 msgstr ""
 
-#: handlers.py:324
+#: Bot/handlers.py:325
 msgid "Понедельник"
 msgstr ""
 
-#: handlers.py:328
+#: Bot/handlers.py:329
 msgid "Вторник"
 msgstr ""
 
-#: handlers.py:332
+#: Bot/handlers.py:333
 msgid "Среда"
 msgstr ""
 
-#: handlers.py:336
+#: Bot/handlers.py:337
 msgid "Четверг"
 msgstr ""
 
-#: handlers.py:340
+#: Bot/handlers.py:341
 msgid "Пятница"
 msgstr ""
 
-#: handlers.py:344
+#: Bot/handlers.py:345
 msgid "Выбери день недели"
 msgstr ""
 
-#: handlers.py:352
+#: Bot/handlers.py:353
 msgid "В этот день нет пар."
 msgstr ""
 
-#: handlers.py:416
+#: Bot/handlers.py:417
 msgid "/schedule - просмотр расписания,\n"
 msgstr ""
 
-#: handlers.py:417
+#: Bot/handlers.py:418
 msgid "/deadlines - добавить/просмотреть дедлайны\n"
 msgstr ""
 
-#: handlers.py:418
+#: Bot/handlers.py:419
 msgid "/hw - домашнее задание"
 msgstr ""
 
-#: handlers.py:428
+#: Bot/handlers.py:429
 msgid "Создать"
 msgstr ""
 
-#: handlers.py:429
+#: Bot/handlers.py:430
 msgid "Посмотреть список"
 msgstr ""
 
-#: handlers.py:433
+#: Bot/handlers.py:434
 msgid "Здесь можно настроить или узнать текущие дедлайны. Выберите действие:"
 msgstr ""
 
-#: handlers.py:441
+#: Bot/handlers.py:442
 msgid "Введите дату дедлайна в формате YYYY-MM-DD"
 msgstr ""
 
-#: handlers.py:451
+#: Bot/handlers.py:452
 msgid "Теперь введите время дедлайна в формате HH:MM"
 msgstr ""
 
-#: handlers.py:454
+#: Bot/handlers.py:455
 msgid "Неверный формат. Введите дату как YYYY-MM-DD"
 msgstr ""
 
-#: handlers.py:463
+#: Bot/handlers.py:464
 msgid "Теперь введите название дедлайна"
 msgstr ""
 
-#: handlers.py:466
+#: Bot/handlers.py:467
 msgid "Неверный формат. Введите время как HH:MM"
 msgstr ""
 
-#: handlers.py:485
+#: Bot/handlers.py:486
 #, python-brace-format
 msgid "Дедлайн «{title}» добавлен на {deadtime} (МСК)"
 msgstr ""
 
-#: handlers.py:497
+#: Bot/handlers.py:498
 msgid "У вас пока нет активных дедлайнов!"
 msgstr ""
 
-#: handlers.py:505
+#: Bot/handlers.py:506
 msgid ""
 "<b>Ваши дедлайны:</b>\n"
 "\n"

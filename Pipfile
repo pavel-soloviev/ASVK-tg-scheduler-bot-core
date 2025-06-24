@@ -11,6 +11,7 @@ apscheduler = "*"
 pytz = "*"
 build = "*"
 setuptools = "*"
+doit = "*"
 
 [dev-packages]
 pre-commit = "*"
