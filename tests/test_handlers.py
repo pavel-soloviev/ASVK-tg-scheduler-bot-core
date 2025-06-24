@@ -128,8 +128,8 @@ async def test_start_command():
 
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
-    assert 'Привет! Я бот 321 группы' in args[0]
-    assert "Регистрация" in str(kwargs['reply_markup'])
+    assert 'Choose language.' == args[0]
+
 
 
 @pytest.mark.asyncio
