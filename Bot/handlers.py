@@ -183,7 +183,7 @@ async def homework_menu(message: Message, state: FSMContext):
 
 @router.callback_query(HomeWork.choosing_action, F.data == "add_hw")
 async def action_selected(callback: CallbackQuery, state: FSMContext):
-    """Adding hw selected. Choose subject to add hw."""
+    """Add hw selected. Choose subject to add hw."""
     await callback.answer()
     # action = callback.data
 

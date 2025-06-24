@@ -67,6 +67,7 @@ async def main() -> None:
 
 
 def start_bot() -> None:
+    """Start bot."""
     global BOT
     BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)

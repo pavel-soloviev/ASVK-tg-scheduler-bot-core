@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import SecretStr
 from pathlib import Path
 
+
 class Settings(BaseSettings):
     """Get settings."""
 
