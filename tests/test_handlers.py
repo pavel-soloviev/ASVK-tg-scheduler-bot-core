@@ -95,7 +95,7 @@ def message(id=1, user_name='Somebody', text='Mario', msg='Some text'):
     return msg
 
 
-def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody'):
+def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody', text='Some text'):
     """Мок CallbackQuery с базовой функциональностью"""
     mock_callback = MagicMock(spec=CallbackQuery)
     mock_callback.id = id  # ID callback-запроса
@@ -105,6 +105,7 @@ def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody'):
     mock_callback.from_user.username = user_name
     mock_callback.message = MagicMock()
     mock_callback.message.answer = AsyncMock()
+    mock_callback.message.edit_text = AsyncMock()
     mock_callback.answer = AsyncMock()
     
     return mock_callback
@@ -317,4 +318,33 @@ async def test_cmd_deadline_command():
     assert 'Здесь можно настроить или узнать текущие дедлайны' in args[0]
     assert 'Создать' == kwargs['reply_markup'].inline_keyboard[0][0].text
     assert 'Посмотреть список' == kwargs['reply_markup'].inline_keyboard[0][1].text
+
+
+
+@pytest.mark.asyncio
+async def test_start_add_deadline_command():
+    """Проверка функции создания нового дедлайна
+    Ожидаемый результат - вывод сообщения с предложением ввести дату"""
+
+
+    mock_callback = callback()
+    mock_state = AsyncMock(spec=FSMContext)
+    await start_add_deadline(mock_callback, mock_state)
+    args, kwargs = mock_callback.message.edit_text.call_args
+    assert 'Введите дату дедлайна в формате YYYY-MM-DD' == args[0]
+    mock_state.set_state.assert_called_once_with(AddDeadline.waiting_for_date)
+
+@pytest.mark.asyncio
+async def test_input_time_command():
+    """Проверка команды дедлайнов с неверным форматом времени
+    Ожидается сообщение с информационным выводом и текстом на кнопках"""
+
+
+    msg = message(text='No time for this')
+    mock_state = AsyncMock(spec=FSMContext)
+    await input_time(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
+    assert 'Неверный формат. Введите время как HH:MM' == args[0]
+    
 
