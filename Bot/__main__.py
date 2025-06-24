@@ -5,7 +5,7 @@ import sys
 import asyncio
 
 from Bot.config import config
-from Bot.handlers import router
+from Bot.handlers import router, _
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
@@ -47,7 +47,7 @@ async def reminder_worker():
             delta = deadline - now
 
             if timedelta(minutes=0) < delta <= timedelta(minutes=1):
-                text = (f"Напоминание!\n<b>{row['title']}</b>\nДедлайн в "
+                text = (_("Напоминание!\n<b>{title}</b>\nДедлайн в ").format(title=row['title']) +
                         f"{deadline.astimezone(moscow_tz).strftime('%H:%M %d.%m.%Y')}")
 
                 try:

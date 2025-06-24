@@ -1,0 +1,234 @@
+# English (United States) translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-06-24 08:27+0300\n"
+"PO-Revision-Date: 2025-06-24 08:27+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en_US\n"
+"Language-Team: en_US <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: __main__.py:50
+#, python-brace-format
+msgid ""
+"Напоминание!\n"
+"<b>{title}</b>\n"
+"Дедлайн в "
+msgstr ""
+"Reminder!\n"
+"<b>{title}</b>\n"
+"Deadline at "
+
+#: handlers.py:107
+msgid "Отлично, вы выбрали лучший язык в мире!"
+msgstr "Great, you chose the best language in the world!"
+
+#: handlers.py:111
+msgid "Регистрация"
+msgstr "Register"
+
+#: handlers.py:115
+msgid "Привет! Я бот 321 группы. Для начала необходимо зарегестрироваться."
+msgstr "Hello! I'm the bot for group 321. You need to register first."
+
+#: handlers.py:128
+msgid "Всё верно"
+msgstr "Everything is correct"
+
+#: handlers.py:132
+msgid "Редактировать"
+msgstr "Edit"
+
+#: handlers.py:136
+#, python-brace-format
+msgid ""
+"Вы уже зарегестрированы со следующими данными.\n"
+"\n"
+"ФИО: {name}"
+msgstr ""
+"You are already registered with the following details.\n"
+"\n"
+"Full name: {name}"
+
+#: handlers.py:139 handlers.py:149
+msgid "Введите ваше ФИО:"
+msgstr "Enter your full name:"
+
+#: handlers.py:159 handlers.py:168
+msgid "Отлично!"
+msgstr "Great!"
+
+#: handlers.py:176
+msgid "Добавить ДЗ"
+msgstr "Add homework"
+
+#: handlers.py:177
+msgid "Посмотреть ДЗ"
+msgstr "View homework"
+
+#: handlers.py:179
+msgid "Выберите действие:"
+msgstr "Choose an action:"
+
+#: handlers.py:193 handlers.py:273
+msgid "В базе нет предметов."
+msgstr "There are no subjects in the database."
+
+#: handlers.py:201
+msgid "Выберите предмет:"
+msgstr "Select a subject:"
+
+#: handlers.py:218
+#, python-brace-format
+msgid "Выбран предмет: {subject_name}\n"
+msgstr "Selected subject: {subject_name}\n"
+
+#: handlers.py:219
+msgid "Введите задание:"
+msgstr "Enter the task:"
+
+#: handlers.py:234
+msgid "Введите дедлайн в формате ДД.ММ.ГГГГ"
+msgstr "Enter the deadline in the format DD.MM.YYYY"
+
+#: handlers.py:244
+msgid "Дедлайн не может быть в прошлом! Введите корректную дату:"
+msgstr "The deadline cannot be in the past! Enter a valid date:"
+
+#: handlers.py:257
+msgid "ДЗ успешно добавлено!"
+msgstr "Homework successfully added!"
+
+#: handlers.py:262
+msgid "Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:"
+msgstr "Invalid date format! Enter in the format DD.MM.YYYY:"
+
+#: handlers.py:281
+msgid "Выберите предмет для просмотра ДЗ:"
+msgstr "Select a subject to view homework:"
+
+#: handlers.py:302
+#, python-brace-format
+msgid "По предмету {subject_name} нет домашних заданий."
+msgstr "There are no homework assignments for the subject {subject_name}."
+
+#: handlers.py:306
+#, python-brace-format
+msgid "Описание задания: {hw_des}\n"
+msgstr "Task description: {hw_des}\n"
+
+#: handlers.py:307
+#, python-brace-format
+msgid "Дедлайн: {deadtime}"
+msgstr "Deadline: {deadtime}"
+
+#: handlers.py:310
+#, python-brace-format
+msgid ""
+"Домашние задания по предмету {subject_name}:\n"
+"\n"
+"{hw_list}"
+msgstr ""
+"Homework assignments for the subject {subject_name}:\n"
+"\n"
+"{hw_list}"
+
+#: handlers.py:324
+msgid "Понедельник"
+msgstr "Monday"
+
+#: handlers.py:328
+msgid "Вторник"
+msgstr "Tuesday"
+
+#: handlers.py:332
+msgid "Среда"
+msgstr "Wednesday"
+
+#: handlers.py:336
+msgid "Четверг"
+msgstr "Thursday"
+
+#: handlers.py:340
+msgid "Пятница"
+msgstr "Friday"
+
+#: handlers.py:344
+msgid "Выбери день недели"
+msgstr "Choose a day of the week"
+
+#: handlers.py:352
+msgid "В этот день нет пар."
+msgstr "There are no classes on this day."
+
+#: handlers.py:416
+msgid "/schedule - просмотр расписания,\n"
+msgstr "/schedule - view the schedule,\n"
+
+#: handlers.py:417
+msgid "/deadlines - добавить/просмотреть дедлайны\n"
+msgstr "/deadlines - add/view deadlines\n"
+
+#: handlers.py:418
+msgid "/hw - домашнее задание"
+msgstr "/hw - homework"
+
+#: handlers.py:428
+msgid "Создать"
+msgstr "Create"
+
+#: handlers.py:429
+msgid "Посмотреть список"
+msgstr "View list"
+
+#: handlers.py:433
+msgid "Здесь можно настроить или узнать текущие дедлайны. Выберите действие:"
+msgstr "Here you can set or view current deadlines. Choose an action:"
+
+#: handlers.py:441
+msgid "Введите дату дедлайна в формате YYYY-MM-DD"
+msgstr "Enter the deadline date in the format YYYY-MM-DD"
+
+#: handlers.py:451
+msgid "Теперь введите время дедлайна в формате HH:MM"
+msgstr "Now enter the deadline time in the format HH:MM"
+
+#: handlers.py:454
+msgid "Неверный формат. Введите дату как YYYY-MM-DD"
+msgstr "Invalid format. Enter the date as YYYY-MM-DD"
+
+#: handlers.py:463
+msgid "Теперь введите название дедлайна"
+msgstr "Now enter the deadline title"
+
+#: handlers.py:466
+msgid "Неверный формат. Введите время как HH:MM"
+msgstr "Invalid format. Enter the time as HH:MM"
+
+#: handlers.py:485
+#, python-brace-format
+msgid "Дедлайн «{title}» добавлен на {deadtime} (МСК)"
+msgstr "Deadline \"{title}\" added for {deadtime} (MSK)"
+
+#: handlers.py:497
+msgid "У вас пока нет активных дедлайнов!"
+msgstr "You don't have any active deadlines yet!"
+
+#: handlers.py:505
+msgid ""
+"<b>Ваши дедлайны:</b>\n"
+"\n"
+msgstr ""
+"<b>Your deadlines:</b>\n"
+"\n"
+

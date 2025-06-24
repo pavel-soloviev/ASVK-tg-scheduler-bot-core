@@ -10,6 +10,8 @@ from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 import supabase as sb
+import gettext
+import os
 
 from Bot.config import config
 
@@ -23,6 +25,12 @@ KEY = config.key.get_secret_value()
 
 CLIENT = sb.create_client(URL, KEY)
 moscow_tz = pytz.timezone("Europe/Moscow")
+
+locales_path = os.path.join(os.path.dirname(__file__), 'locales')
+translation = gettext.translation("TG_bot", localedir=locales_path, fallback=True)
+_, ngettext = translation.gettext, translation.ngettext
+
+user_langs = {}  # локаль по идентификатору пользователя
 
 
 class Registration(StatesGroup):
@@ -50,16 +58,63 @@ class AddDeadline(StatesGroup):
     waiting_for_title = State()
 
 
+def set_locale(locale_name):
+    """Set locale for particular user."""
+    locales_path = os.path.join(os.path.dirname(__file__), 'locales')
+
+    try:
+        translation = gettext.translation(
+            "TG_bot",
+            localedir=locales_path,
+            languages=[locale_name],
+            fallback=True
+        )
+        translation.install()
+        global _
+        global ngettext
+        _ = translation.gettext
+        ngettext = translation.ngettext
+    except Exception as e:
+        print(f"Locale error: {e}")
+        translation = gettext.NullTranslations()
+        translation.install()
+        _ = translation.gettext
+        ngettext = translation.ngettext
+
+
 @router.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     """Greeting of the bot."""
+    language = InlineKeyboardBuilder()
+    language.add(InlineKeyboardButton(
+        text="Русский",
+        callback_data='lang-ru_RU'
+    ))
+    language.add(InlineKeyboardButton(
+        text='English',
+        callback_data='lang-en_US'
+    ))
+    await message.answer("Choose language.",
+                         reply_markup=language.as_markup())
+
+
+@router.callback_query(F.data.startswith('lang-'))
+async def start_registration(callback: CallbackQuery, state: FSMContext):
+    """Choose language and start registration."""
+    lang = callback.data.split("-")[1]
+    user_langs[callback.from_user.id] = lang
+    set_locale(lang)
+    await callback.message.answer(_("Отлично, вы выбрали лучший язык в мире!"))
+
     registration = InlineKeyboardBuilder()
     registration.add(InlineKeyboardButton(
-        text="Регистрация",
+        text=_("Регистрация"),
         callback_data="registration")
     )
-    await message.answer("Привет! Я бот 321 группы. Для начала необходимо зарегестрироваться.",
-                         reply_markup=registration.as_markup())
+    await callback.message.answer(
+        _("Привет! Я бот 321 группы. Для начала необходимо зарегестрироваться."),
+        reply_markup=registration.as_markup()
+    )
 
 
 @router.callback_query(F.data == 'registration')
@@ -70,20 +125,20 @@ async def registration(callback: CallbackQuery, state: FSMContext):
     if same_user:
         check = InlineKeyboardBuilder()
         check.add(InlineKeyboardButton(
-            text="Всё верно",
+            text=_("Всё верно"),
             callback_data='right'
         ))
         check.add(InlineKeyboardButton(
-            text='Редактировать',
+            text=_('Редактировать'),
             callback_data='fix'
         ))
-        await callback.message.answer(f"Вы уже зарегестрированы со следующими данными.\n\nФИО: {same_user[0]['name']}",
+        name = same_user[0]['name']
+        await callback.message.answer(_("Вы уже зарегестрированы со следующими данными.\n\nФИО: {name}").format(name=name),
                                       reply_markup=check.as_markup())
         return
-    await callback.message.answer('Введите ваше ФИО:')
+    await callback.message.answer(_('Введите ваше ФИО:'))
 
-
-    #print(state)
+    # print(state)
     await state.set_state(Registration.name)
 
 
@@ -91,7 +146,7 @@ async def registration(callback: CallbackQuery, state: FSMContext):
 async def fix_registration(callback: CallbackQuery, state: FSMContext):
     """Start registration from the beginning."""
     CLIENT.table("users").delete().eq("tg_username", str(callback.from_user.username)).execute()
-    await callback.message.answer('Введите ваше ФИО:')
+    await callback.message.answer(_('Введите ваше ФИО:'))
     await state.set_state(Registration.name)
 
 
@@ -101,7 +156,7 @@ async def process_name(message: Message, state: FSMContext):
     CLIENT.table("users").insert({"tg_id": str(message.from_user.id),
                                   "name": message.text,
                                   "tg_username": message.from_user.username}).execute()
-    await message.answer("Отлично!")
+    await message.answer(_("Отлично!"))
     await state.clear()
 
 
@@ -110,7 +165,7 @@ async def wait(callback: CallbackQuery, state: FSMContext):
     """Standart response."""
     tg_id, tg_username = str(callback.from_user.id), str(callback.from_user.username)
     CLIENT.table("users").update({"tg_id": tg_id}).eq("tg_username", tg_username).execute()
-    await callback.message.answer('Отлично!')
+    await callback.message.answer(_('Отлично!'))
     await state.set_state(Registration.passed)
 
 
@@ -118,10 +173,10 @@ async def wait(callback: CallbackQuery, state: FSMContext):
 async def homework_menu(message: Message, state: FSMContext):
     """Start of hw command. Chose between add and check homework."""
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Добавить ДЗ", callback_data="add_hw")],
-        [InlineKeyboardButton(text="Посмотреть ДЗ", callback_data="view_hw")]
+        [InlineKeyboardButton(text=_("Добавить ДЗ"), callback_data="add_hw")],
+        [InlineKeyboardButton(text=_("Посмотреть ДЗ"), callback_data="view_hw")]
     ])
-    await message.answer("Выберите действие:", reply_markup=keyboard)
+    await message.answer(_("Выберите действие:"), reply_markup=keyboard)
     await state.set_state(HomeWork.choosing_action)
 
 
@@ -135,7 +190,7 @@ async def action_selected(callback: CallbackQuery, state: FSMContext):
     subjects = response.data
 
     if not subjects:
-        await callback.message.answer("В базе нет предметов.")
+        await callback.message.answer(_("В базе нет предметов."))
         return await state.clear()
 
     builder = InlineKeyboardBuilder()
@@ -143,7 +198,7 @@ async def action_selected(callback: CallbackQuery, state: FSMContext):
         builder.button(text=subj['name'], callback_data=f"subject_{subj['id']}")
 
     builder.adjust(2)
-    await callback.message.answer("Выберите предмет:", reply_markup=builder.as_markup())
+    await callback.message.answer(_("Выберите предмет:"), reply_markup=builder.as_markup())
 
     await state.set_state(HomeWork.selecting_subject)
     await callback.answer()
@@ -160,8 +215,8 @@ async def subject_selected(callback: CallbackQuery, state: FSMContext):
         response = CLIENT.table('subjects').select('name').eq('id', subject_id).execute()
         subject_name = response.data[0]['name'] if response.data else "неизвестный предмет"
 
-        await callback.message.answer(f"Выбран предмет: {subject_name}\n")
-        await callback.message.answer("Введите задание:")
+        await callback.message.answer(_("Выбран предмет: {subject_name}\n").format(subject_name=subject_name))
+        await callback.message.answer(_("Введите задание:"))
         await state.set_state(HomeWork.entering_task)
 
     except Exception as e:
@@ -176,7 +231,7 @@ async def subject_selected(callback: CallbackQuery, state: FSMContext):
 async def task_entered(message: Message, state: FSMContext):
     """Insert deadline of the hw."""
     await state.update_data(task=message.text)
-    await message.answer("Введите дедлайн в формате ДД.ММ.ГГГГ")
+    await message.answer(_("Введите дедлайн в формате ДД.ММ.ГГГГ"))
     await state.set_state(HomeWork.entering_deadline)
 
 
@@ -186,7 +241,7 @@ async def deadline_entered(message: Message, state: FSMContext):
     try:
         deadline = datetime.strptime(message.text, "%d.%m.%Y").date()
         if deadline < datetime.now().date():
-            await message.answer("Дедлайн не может быть в прошлом! Введите корректную дату:")
+            await message.answer(_("Дедлайн не может быть в прошлом! Введите корректную дату:"))
             return
 
         data = await state.get_data()
@@ -199,12 +254,12 @@ async def deadline_entered(message: Message, state: FSMContext):
                                          'is_completed': False,
                                          'tg_id': str(message.from_user.id)}).execute()
 
-        await message.answer("ДЗ успешно добавлено!")
+        await message.answer(_("ДЗ успешно добавлено!"))
         # После добавления ДЗ возвращаемся в начальное состояние. Пользователь зареган и может давать команды
         await state.set_state(Registration.passed)
 
     except ValueError:
-        await message.answer("Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:")
+        await message.answer(_("Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:"))
 
 
 @router.callback_query(HomeWork.choosing_action, F.data == "view_hw")
@@ -215,7 +270,7 @@ async def view_homeworks_start(callback: CallbackQuery, state: FSMContext):
         subjects = response.data
 
         if not subjects:
-            await callback.message.answer("В базе нет предметов.")
+            await callback.message.answer(_("В базе нет предметов."))
             return await state.clear()
 
         keyboard = InlineKeyboardMarkup(
@@ -223,7 +278,7 @@ async def view_homeworks_start(callback: CallbackQuery, state: FSMContext):
                 [InlineKeyboardButton(text=subj['name'], callback_data=f"view_subject_{subj['id']}")]
                 for subj in subjects])
 
-        await callback.message.answer("Выберите предмет для просмотра ДЗ:", reply_markup=keyboard)
+        await callback.message.answer(_("Выберите предмет для просмотра ДЗ:"), reply_markup=keyboard)
         await state.set_state(HomeWork.viewing_homeworks)
         await callback.answer()
 
@@ -244,13 +299,15 @@ async def show_homeworks(callback: CallbackQuery, state: FSMContext):
             'subject_id', subject_id).order('due_date').execute().data
 
         if not homeworks:
-            await callback.message.answer(f"По предмету {subject_name} нет домашних заданий.")
+            await callback.message.answer(_("По предмету {subject_name} нет домашних заданий.").format(subject_name=subject_name))
         else:
-            hw_list = "\n\n".join(f"Описание задания: {hw['description']}\n"
-                                  f"Дедлайн: {datetime.fromisoformat(hw['due_date']).strftime('%d.%m.%Y')}"
-                                  for hw in homeworks)
+            hw_list = ""
+            for hw in homeworks:
+                hw_list = hw_list + _("Описание задания: {hw_des}\n").format(hw_des=hw['description']) + \
+                    _("Дедлайн: {deadtime}").format(
+                        deadtime=datetime.fromisoformat(hw['due_date']).strftime('%d.%m.%Y')) + "\n\n"
 
-            await callback.message.answer(f"Домашние задания по предмету {subject_name}:\n\n{hw_list}")
+            await callback.message.answer(_("Домашние задания по предмету {subject_name}:\n\n{hw_list}").format(subject_name=subject_name, hw_list=hw_list))
 
         await state.set_state(Registration.passed)
         await callback.answer()
@@ -264,27 +321,27 @@ async def set_day(message: Message, state: FSMContext):
     """Select day to get schedule."""
     day = InlineKeyboardBuilder()
     day.add(InlineKeyboardButton(
-        text="Понедельник",
+        text=_("Понедельник"),
         callback_data="monday")
     )
     day.add(InlineKeyboardButton(
-        text="Вторник",
+        text=_("Вторник"),
         callback_data="tuesday")
     )
     day.add(InlineKeyboardButton(
-        text="Среда",
+        text=_("Среда"),
         callback_data="wednesday")
     )
     day.add(InlineKeyboardButton(
-        text="Четверг",
+        text=_("Четверг"),
         callback_data="thursday")
     )
     day.add(InlineKeyboardButton(
-        text="Пятница",
+        text=_("Пятница"),
         callback_data="friday")
     )
     day.adjust(1)
-    await message.answer("Выбери день недели",
+    await message.answer(_("Выбери день недели"),
                          reply_markup=day.as_markup())
 
 
@@ -292,7 +349,7 @@ def get_schedule(day, day_to_print):
     """Get all information to print schedule."""
     schedule = CLIENT.table("schedule").select("*").eq("day_of_week", day).execute().data
     if not schedule:
-        return 'В этот день нет пар.'
+        return _('В этот день нет пар.')
     mes = '<b>Расписание на {}</b>'.format(day_to_print)
     schedule = sorted(schedule, key=lambda x: x['pair_number'])
     for i in schedule:
@@ -356,9 +413,9 @@ async def friday(callback: CallbackQuery, state: FSMContext):
 async def get_help(message: Message, state: FSMContext):
     """Print all commands with instruction."""
     await message.answer(
-        "/schedule - просмотр расписания,\n"
-        "/deadlines - добавить/просмотреть дедлайны\n"
-        "/hw - домашнее задание"
+        _("/schedule - просмотр расписания,\n") +
+        _("/deadlines - добавить/просмотреть дедлайны\n") +
+        _("/hw - домашнее задание")
     )
 
 
@@ -368,12 +425,12 @@ async def cmd_deadline(message: Message, command: CommandObject):
     kb = InlineKeyboardBuilder()
 
     kb.row(
-        InlineKeyboardButton(text="Создать", callback_data="create"),
-        InlineKeyboardButton(text="Посмотреть список", callback_data="check_list"),
+        InlineKeyboardButton(text=_("Создать"), callback_data="create"),
+        InlineKeyboardButton(text=_("Посмотреть список"), callback_data="check_list"),
     )
 
     await message.answer(
-        "Здесь можно настроить или узнать текущие дедлайны. Выберите действие:",
+        _("Здесь можно настроить или узнать текущие дедлайны. Выберите действие:"),
         reply_markup=kb.as_markup()
     )
 
@@ -381,7 +438,7 @@ async def cmd_deadline(message: Message, command: CommandObject):
 @router.callback_query(F.data == "create")
 async def start_add_deadline(callback: CallbackQuery, state: FSMContext):
     """Create new deadline."""
-    await callback.message.edit_text("Введите дату дедлайна в формате YYYY-MM-DD")
+    await callback.message.edit_text(_("Введите дату дедлайна в формате YYYY-MM-DD"))
     await state.set_state(AddDeadline.waiting_for_date)
 
 
@@ -391,10 +448,10 @@ async def input_date(message: Message, state: FSMContext):
     try:
         date = datetime.strptime(message.text, "%Y-%m-%d").date()
         await state.update_data(date=date)
-        await message.answer("Теперь введите время дедлайна в формате HH:MM")
+        await message.answer(_("Теперь введите время дедлайна в формате HH:MM"))
         await state.set_state(AddDeadline.waiting_for_time)
     except ValueError:
-        await message.answer("Неверный формат. Введите дату как YYYY-MM-DD")
+        await message.answer(_("Неверный формат. Введите дату как YYYY-MM-DD"))
 
 
 @router.message(AddDeadline.waiting_for_time)
@@ -403,10 +460,10 @@ async def input_time(message: Message, state: FSMContext):
     try:
         time = datetime.strptime(message.text, "%H:%M").time()
         await state.update_data(time=time)
-        await message.answer("Теперь введите название дедлайна")
+        await message.answer(_("Теперь введите название дедлайна"))
         await state.set_state(AddDeadline.waiting_for_title)
     except ValueError:
-        await message.answer("Неверный формат. Введите время как HH:MM")
+        await message.answer(_("Неверный формат. Введите время как HH:MM"))
 
 
 @router.message(AddDeadline.waiting_for_title)
@@ -425,7 +482,7 @@ async def input_title(message: Message, state: FSMContext):
         "notified": False
     }).execute()
 
-    await message.answer(f"Дедлайн «{title}» добавлен на {moscow_dt.strftime('%d.%m.%Y %H:%M')} (МСК)")
+    await message.answer(_("Дедлайн «{title}» добавлен на {deadtime} (МСК)").format(title=title, deadtime=moscow_dt.strftime('%d.%m.%Y %H:%M')))
     await state.clear()
 
 
@@ -437,7 +494,7 @@ async def check_deadlines_list(callback: CallbackQuery, state: FSMContext):
     future_deadlines = CLIENT.table("deadlines").select(
         "*").eq("telegram_id", user_id).gt("deadline_at", now.isoformat()).execute()
     if not future_deadlines:
-        await callback.message.answer("У вас пока нет активных дедлайнов!")
+        await callback.message.answer(_("У вас пока нет активных дедлайнов!"))
         return
 
     sorted_deadlines = sorted(
@@ -445,10 +502,10 @@ async def check_deadlines_list(callback: CallbackQuery, state: FSMContext):
         key=lambda x: datetime.fromisoformat(x['deadline_at'])
     )
 
-    text = "<b>Ваши дедлайны:</b>\n\n"
+    text = _("<b>Ваши дедлайны:</b>\n\n")
     for i, deadline in enumerate(sorted_deadlines, 1):
         print(deadline)
-        deadline_time = datetime.fromisoformat(deadline["deadline_at"]).strftime('%d.%m.%Y в %H:%M')
+        deadline_time = datetime.fromisoformat(deadline["deadline_at"]).strftime('%d.%m.%Y %H:%M')
         text += (
             f"{i}. <b>{deadline['title']}</b>\n"
             f"   └ {deadline_time}\n\n"
