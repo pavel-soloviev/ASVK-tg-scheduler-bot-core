@@ -84,13 +84,14 @@ def bot():
     mock.edit_message_text = AsyncMock()
     return mock
 
-def message(id=1, user_name='123456789', text='Somebody'):
+def message(id=1, user_name='123456789', text='Somebody', msg='Some text'):
     msg = MagicMock(spec=Message)
     msg.from_user = MagicMock(spec=User)
     msg.from_user.id = id
     msg.from_user.username=user_name
     msg.answer = AsyncMock()
     msg.text = text
+    msg.message = msg
     return msg
 
 
@@ -147,6 +148,18 @@ async def test_registration_2():
     assert 'Введите ваше ФИО:' in args[0]
     mock_state.set_state.assert_called_once_with(Registration.name)
 
+
+@pytest.mark.asyncio
+async def test_fix_registration_command():
+    """Пользователь с обычными параметрами удаляется из БД и бот просит ввести фио"""
+
+    mock_callback = callback()
+    mock_state = AsyncMock(spec=FSMContext)
+    await fix_registration(mock_callback, mock_state)
+    mock_callback.message.answer.assert_called_once_with('Введите ваше ФИО:')
+
+
+
 @pytest.mark.asyncio
 async def test_process_name_command():
     
@@ -156,7 +169,7 @@ async def test_process_name_command():
     await process_name(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
-    assert 'Отлично' in args[0]
+    assert 'Отлично!' == args[0]
 
 
 @pytest.mark.asyncio
