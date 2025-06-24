@@ -65,7 +65,12 @@ async def main() -> None:
     asyncio.create_task(reminder_worker())
     await dp.start_polling(BOT)
 
-if __name__ == "__main__":
-    BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
+def start_bot() -> None:
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    BOT = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    start_bot()
