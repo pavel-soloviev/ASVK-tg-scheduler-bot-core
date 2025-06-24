@@ -131,7 +131,6 @@ async def test_start_command():
     assert 'Choose language.' == args[0]
 
 
-
 @pytest.mark.asyncio
 async def test_registration_1():
     """Имитируем работу функции registration с дефолтными параметрами пользователя, которые есть в БД

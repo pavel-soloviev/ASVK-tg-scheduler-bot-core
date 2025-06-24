@@ -1,0 +1,19 @@
+[project]
+name="Scheduler_bot"
+description="Schedulder bot for ASVK group"
+version="0.1.0"
+requires-python = ">=3.12"
+dependencies = ["supabase", "aiogram", "pydantic-settings", "apscheduler", "pytz"]
+
+[build-system]
+requires = ["setuptools", "Sphinx", "build", "doit"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-dir]
+Bot="Bot"
+
+[tool.setuptools.package-data]
+Bot=["Bot/locales/en_US/LC_MESSAGES/TG_bot.mo", "doc/_build/*", "Bot/*.py", "Bot/.env"]
+
+[project.scripts]
+start_bot="Bot.__main__:start_bot"
