@@ -10,6 +10,7 @@ aiogram = "*"
 apscheduler = "*"
 pytz = "*"
 build = "*"
+setuptools = "*"
 
 [dev-packages]
 pre-commit = "*"

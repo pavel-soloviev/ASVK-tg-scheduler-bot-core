@@ -1,5 +1,5 @@
 [project]
-name="Scheduler bot"
+name="Scheduler_bot"
 description="Schedulder bot for ASVK group"
 version="0.1.0"
 requires-python = ">=3.12"

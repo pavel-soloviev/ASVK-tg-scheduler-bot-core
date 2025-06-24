@@ -3,3 +3,6 @@ __pycache__/
 .db
 doc/_build/
 .*.db
+*.mo
+dist/
+*egg-info/
