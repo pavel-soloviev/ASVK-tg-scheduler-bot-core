@@ -8,6 +8,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, CallbackQuery, User, Chat, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 import pytz
+import random
+import string
 
 
 with patch('Bot.handlers.config') as mock_config, \
@@ -82,7 +84,7 @@ def bot():
     mock.edit_message_text = AsyncMock()
     return mock
 
-def message(id=1, user_name='Somebody', text='Happy life!'):
+def message(id=1, user_name='123456789', text='Somebody'):
     msg = MagicMock(spec=Message)
     msg.from_user = MagicMock(spec=User)
     msg.from_user.id = id
@@ -122,19 +124,28 @@ async def test_start_command():
 
 
 @pytest.mark.asyncio
-async def test_registration_flow():
-    
-    # 1. Имитируем нажатие кнопки "Регистрация"
+async def test_registration_1():
+    """Имитируем работу функции registration с дефолтными параметрами пользователя, которые есть в БД
+    Ожидаемый результат - пользователю выводится сообщение о том, что он уже зарегистрирован"""
+
     mock_callback = callback()
     mock_state = AsyncMock(spec=FSMContext)
     await registration(mock_callback, mock_state)
-
     args, kwargs = mock_callback.message.answer.call_args
-    print(f'ARGS = {args}')
-    print(f'KWARGS = {kwargs}')
+    assert 'Вы уже зарегестрированы со следующими данными.' in args[0]
 
-    assert args[0] == 'Введите ваше ФИО:' or 'Вы уже зарегестрированы со следующими данными.' in args[0]
-    #mock_state.set_state.assert_called_once_with(Registration.name)
+
+@pytest.mark.asyncio
+async def test_registration_2():
+    """Имитируем работу функции registration с нестандартными параметрами пользователя, которых нет в БД
+    Ожидаемый результат - пользователю выводится сообщение с просьбой пройти регистрацию"""
+
+    mock_callback = callback(user_name=''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase) for _ in range(10)))
+    mock_state = AsyncMock(spec=FSMContext)
+    await registration(mock_callback, mock_state)
+    args, kwargs = mock_callback.message.answer.call_args
+    assert 'Введите ваше ФИО:' in args[0]
+    mock_state.set_state.assert_called_once_with(Registration.name)
 
 @pytest.mark.asyncio
 async def test_process_name_command():
