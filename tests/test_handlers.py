@@ -84,7 +84,7 @@ def bot():
     mock.edit_message_text = AsyncMock()
     return mock
 
-def message(id=1, user_name='123456789', text='Somebody', msg='Some text'):
+def message(id=1, user_name='Somebody', text='Mario', msg='Some text'):
     msg = MagicMock(spec=Message)
     msg.from_user = MagicMock(spec=User)
     msg.from_user.id = id
@@ -105,6 +105,7 @@ def callback(id="123abc", data="button_1", user_id=111, user_name='Somebody'):
     mock_callback.from_user.username = user_name
     mock_callback.message = MagicMock()
     mock_callback.message.answer = AsyncMock()
+    mock_callback.answer = AsyncMock()
     
     return mock_callback
 
@@ -162,10 +163,10 @@ async def test_fix_registration_command():
 
 @pytest.mark.asyncio
 async def test_process_name_command():
-    
+    """Ожидаемый результат работы функции - пользователь добавлен в БД и выведена соответствующая команда"""
+
     msg = message()
     mock_state = AsyncMock(spec=FSMContext)
-
     await process_name(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
@@ -173,18 +174,44 @@ async def test_process_name_command():
 
 
 @pytest.mark.asyncio
-async def test_homework_menu_command():
+async def test_wait_command():
     
+    mock_callback = callback()
+    mock_state = AsyncMock(spec=FSMContext)
+    await wait(mock_callback, mock_state)
+    mock_callback.message.answer.assert_called_once_with('Отлично!')
+    mock_state.set_state.assert_called_once_with(Registration.passed)
+
+
+@pytest.mark.asyncio
+async def test_homework_menu_command():
+    """Проверка меню выбора ДЗ
+    Ожидается сообщение от бота с предложением нажать на кнопки с определенным текстом"""
+
+
     msg = message()
     mock_state = AsyncMock(spec=FSMContext)
-
-    await homework_menu(
-        msg, 
-        mock_state
-    )
+    await homework_menu(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
-    assert 'Выберите' in args[0]
+    assert 'Выберите действие:' == args[0]
+    assert 'Добавить ДЗ' == kwargs['reply_markup'].inline_keyboard[0][0].text
+    assert 'Посмотреть ДЗ' == kwargs['reply_markup'].inline_keyboard[1][0].text
+
+
+@pytest.mark.asyncio
+async def test_action_selected_command():
+    """Проверка функции выбора действия
+    Ожидаемый результат - появилась кнопка с предметами, изменилось состояние машины"""
+
+
+    mock_callback = callback()
+    mock_state = AsyncMock(spec=FSMContext)
+    await action_selected(mock_callback, mock_state)
+    args, kwargs = mock_callback.message.answer.call_args
+    assert 'Выберите предмет:' == args[0]
+    mock_state.set_state.assert_called_once_with(HomeWork.selecting_subject)
+    mock_callback.answer.assert_called()
 
 
 @pytest.mark.asyncio
@@ -196,19 +223,52 @@ async def test_task_entered_command():
     await task_entered(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
-    assert 'Введите дедлайн в формате' in args[0]
+    assert 'Введите дедлайн в формате ДД.ММ.ГГГГ' == args[0]
+    mock_state.set_state.assert_called_once_with(HomeWork.entering_deadline)
 
 
 @pytest.mark.asyncio
-async def test_deadline_entered_command():
+async def test_deadline_entered_command_1():
+    """Положительный тест-кейс ввода данных от пользователя о дедлайне домашнего задания
+    Ожидаемый результат - успешное добавление ДЗ и изменение состояния машины на зарегистрированного пользователя"""
 
-    msg = message()
+
+    msg = message(text='12.12.2025')
     mock_state = AsyncMock(spec=FSMContext)
 
     await deadline_entered(msg, mock_state)
     msg.answer.assert_called_once()
     args, kwargs = msg.answer.call_args
-    assert 'ДЗ успешно добавлено!' in args[0] or 'Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:' in args[0]
+    assert 'ДЗ успешно добавлено!' == args[0]
+    mock_state.set_state.assert_called_once_with(Registration.passed)
+
+@pytest.mark.asyncio
+async def test_deadline_entered_command_2():
+    """Ложный тест-кейс ввода данных от пользователя о дедлайне домашнего задания из прошлого
+    Ожидаемый результат - уведомление пользователя о проблеме"""
+
+    msg = message(text='12.12.2024')
+    mock_state = AsyncMock(spec=FSMContext)
+
+    await deadline_entered(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
+    assert 'Дедлайн не может быть в прошлом! Введите корректную дату:' == args[0]
+
+
+@pytest.mark.asyncio
+async def test_deadline_entered_command_3():
+    """Ложный тест-кейс ввода данных от пользователя: некорректный формат данных от пользователя
+    Ожидаемый результат - уведомление пользователя о проблеме"""
+
+    msg = message(text='It is not a date')
+    mock_state = AsyncMock(spec=FSMContext)
+
+    await deadline_entered(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
+    assert 'Неверный формат даты! Введите в формате ДД.ММ.ГГГГ:' == args[0]
+
 
 
 

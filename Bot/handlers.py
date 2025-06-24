@@ -68,7 +68,7 @@ async def registration(callback: CallbackQuery, state: FSMContext):
     print(str(callback.from_user.username))
     same_user = CLIENT.table("users").select("*").eq("tg_username", str(callback.from_user.username)).execute().data
     if same_user:
-        #print('SAAAAME')
+        print('SAAAAME')
         check = InlineKeyboardBuilder()
         check.add(InlineKeyboardButton(
             text="Всё верно",
