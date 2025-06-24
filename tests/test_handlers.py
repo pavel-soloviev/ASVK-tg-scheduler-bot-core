@@ -271,9 +271,20 @@ async def test_deadline_entered_command_3():
 
 
 
+@pytest.mark.asyncio
+async def test_set_day_command():
+    """Проверка меню выбора ДЗ
+    Ожидается сообщение от бота с предложением нажать на кнопки с определенным текстом"""
 
-'''
 
+    msg = message()
+    mock_state = AsyncMock(spec=FSMContext)
+    await set_day(msg, mock_state)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
+    assert 'Выберите действие:' == args[0]
+    assert 'Добавить ДЗ' == kwargs['reply_markup'].inline_keyboard[0][0].text
+    assert 'Посмотреть ДЗ' == kwargs['reply_markup'].inline_keyboard[1][0].text
 
 
 @pytest.mark.asyncio
@@ -351,4 +362,3 @@ async def test_registration_flow(callback_query, auto_mock_config_and_db, fsm_co
     #    "name": "Иванов Иван Иванович",
     #    "tg_username": "test_user"
     #})
-    '''
