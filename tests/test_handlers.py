@@ -304,4 +304,17 @@ async def test_get_help_command():
     assert '/schedule - просмотр расписания,' in args[0]
 
 
+@pytest.mark.asyncio
+async def test_cmd_deadline_command():
+    """Проверка команды дедлайнов
+    Ожидается сообщение с информационным выводом и текстом на кнопках"""
+
+
+    msg = message()
+    await cmd_deadline(msg, None)
+    msg.answer.assert_called_once()
+    args, kwargs = msg.answer.call_args
+    assert 'Здесь можно настроить или узнать текущие дедлайны' in args[0]
+    assert 'Создать' == kwargs['reply_markup'].inline_keyboard[0][0].text
+    assert 'Посмотреть список' == kwargs['reply_markup'].inline_keyboard[0][1].text
 
